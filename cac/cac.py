@@ -128,10 +128,6 @@ class cac(object):
         if pBIN is None:
             pBIN = self.pBIN
 
-        # empty?
-        if not pBIN.size:
-            return False
-
         # figure out frame size (this is in bytes)
         # assuming that all frames in file have the same exact size # TODO(abunimeh)
         self.frame_sz_bytes = self.pBIN[0]
@@ -180,8 +176,11 @@ class cac(object):
         Returns: 2d uint16 numpy array
 
         """
-        if pBIN is None:
-            pBIN = self.pBIN
+        if pBIN is None and self.pBIN is None:
+            logging.error('pixel binary data is null! Did you load dat file?')
+            return None
+
+        pBIN = self.pBIN
 
         if self.asicname == "epix10a":
             # check if binary data is OK
