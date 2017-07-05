@@ -19,10 +19,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
-from cac import *
+from cac import *  # TODO(abunimeh) complete CAC package for proper installation and usage
+
 
 def main():
-    """Main routine to plot data. This uses argparse to get cli params."""
+    """Routine to plot data. This uses argparse to get cli params.
+
+    Example script using CAC library.
+
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debugging info.")
     parser.add_argument("-s", "--save", action="store_true", help="save npz array.")
@@ -70,6 +75,7 @@ def main():
                 logging.error("Binary data is missing!")
                 sys.exit(1)
 
+            # save npz data after analysis
             if args.save:
                 cc.save()
 
