@@ -71,7 +71,7 @@ def main():
                 sys.exit(1)
 
             # check if loading data is OK
-            if cc.img.size is None:
+            if cc.img is None:
                 logging.error("Binary data is missing!")
                 sys.exit(1)
 
