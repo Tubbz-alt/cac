@@ -116,27 +116,6 @@ class cac(object):
 
         return self.pBIN2D
 
-    def check(self, pBIN=None):
-        """Analyze binary data (wrapper).
-
-        Keyword Arguments:
-                pBIN: uint32 binary data from file
-
-        Returns: False if checking fails, otherwise True
-
-        """
-        pBIN = pBIN or self.pBIN  # passed thru call or in class?
-
-        # empty?
-        if not pBIN:
-            return False
-
-        if self.asicname == "epix10a":
-            return self.check_epix10ka(pBIN)
-
-        logging.debug('asicname is not defined, cannot check()')
-        return False
-
     def check_epix10ka(self, pBIN=None):
         """Analyze binary data for epix10ka.
 
