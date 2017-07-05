@@ -14,12 +14,12 @@ Using CAC, plot the average and standard deviation of an image.
 """
 
 import argparse
+from cac import cac
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
-from cac import *  # TODO(abunimeh) complete CAC package for proper installation and usage
 
 
 def main():
