@@ -71,7 +71,7 @@ def main():
                 sys.exit(1)
 
             # check if loading data is OK
-            if cc.pBIN2D.size is None:
+            if cc.img.size is None:
                 logging.error("Binary data is missing!")
                 sys.exit(1)
 
@@ -80,8 +80,8 @@ def main():
                 cc.save()
 
             # Plot Image
-            img_avg = np.average(cc.pBIN2D, 0)  # mean across multiple frames
-            img_std = np.std(cc.pBIN2D, 0)  # std across multiple frames
+            img_avg = np.average(cc.img, 0)  # mean across multiple frames
+            img_std = np.std(cc.img, 0)  # std across multiple frames
 
             plt.imshow(img_avg)
             plt.gray()

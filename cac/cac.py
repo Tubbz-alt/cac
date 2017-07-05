@@ -38,7 +38,7 @@ class cac(object):
     def __init__(self):
         """CAC Class Constructor."""
         self.pBIN = None  # pixel binary file. will be cleared after 2d transformation
-        self.pBIN2D = None  # 2d transformed pixel data
+        self.img = None  # 2d transformed pixel data
         self.filename = None  # fielname containing binary data
         self.mdate = 0  # last modified date of fielname
         self.asicname = None  # ASIC name
@@ -80,11 +80,11 @@ class cac(object):
         Returns: False if 2D data doesn't exist, otherwise True
 
         """
-        if self.pBIN2D is None:
+        if self.img is None:
             return False
 
         logging.debug('saving npz data file...')
-        np.savez(self.filename + '.npz', img=self.pBIN2D, modified=self.mdate,
+        np.savez(self.filename + '.npz', img=self.img, modified=self.mdate,
                  basename=self.filename, asicname=self.asicname)
 
         return True
@@ -102,7 +102,7 @@ class cac(object):
         self.filename = binfile2d = str(npzfile['basename'])  # binary data file name
         self.asicname = str(npzfile['asicname'])  # asicname
         self.mdate = npzfile['modified']  # last modified
-        self.pBIN2D = npzfile['img']  # pixel image
+        self.img = npzfile['img']  # pixel image
 
         if not os.path.exists(binfile2d):
             logging.debug("Couldn't find original dat file, will skip freshness check.")
@@ -114,7 +114,7 @@ class cac(object):
                 if not self.save():
                     logging.error("Couldn't save npz file.")
 
-        return self.pBIN2D
+        return self.img
 
     def check_epix10ka(self, pBIN=None):
         """Analyze binary data for epix10ka.
@@ -228,5 +228,5 @@ class cac(object):
         logging.debug('image shape ' + str(img_sorted.shape))
 
         self.pBIN = None  # we no longer need raw data
-        self.pBIN2D = img_sorted
-        return self.pBIN2D
+        self.img = img_sorted
+        return self.img
