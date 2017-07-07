@@ -79,9 +79,25 @@ def main():
             if args.save:
                 cc.save()
 
-            # Plot Image
-            img_avg = np.average(cc.img, 0)  # mean across multiple frames
-            img_std = np.std(cc.img, 0)  # std across multiple frames
+            # ASIC arrangement
+            #        C0     C1
+            # R0   ASIC2 - ASIC1
+            # R1   ASIC3 - ASIC0
+            img_asic0 = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
+            # img_asic1 = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
+            # img_asic2 = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
+            # img_asic3 = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # lower left
+
+            # get rid of the 15th bit
+            img_asic0 = np.bitwise_and(0x3FFF, img_asic0)
+
+            # plot single pixel data
+            plt.plot(img_asic0[:, 134, 1])
+            plt.title('Single Pix')
+            plt.show()
+
+            img_avg = np.average(img_asic0, 0)  # mean across multiple frames
+            img_std = np.std(img_asic0, 0)  # std across multiple frames
 
             plt.imshow(img_avg)
             plt.gray()
@@ -89,6 +105,11 @@ def main():
             plt.title('Image mean [' + cc.filename + ']')
             plt.show()
             # plt.savefig(bindatfile + '_avg.png', dpi=300)
+            plt.close()
+
+            plt.hist(img_avg.ravel(), bins='auto')  # arguments are passed to np.histogram
+            plt.title("Image Mean Histrogram")
+            plt.show()
             plt.close()
 
             plt.imshow(img_std)
