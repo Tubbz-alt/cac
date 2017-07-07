@@ -25,7 +25,7 @@ class cac(object):
     # location of SequenceCount in Header
     # added by streamer
     SEQ_COUNT_OFFST = 4
-    # pixel data in framee 68352
+    # pixel data in frame 68352
     PDATA_SZ = 0  # number of 32-bit words
 
     def __enter__(self):
@@ -200,8 +200,8 @@ class cac(object):
             invalid = frame_szs - seq
 
             invalidind = invalid.nonzero()[0]  # first occurrence
-            logging.debug("Offending Frame number: [0x%x]", invalidind[0])
-            logging.debug("File Offsets: [0x%x]", invalidind[0] * (seq + 4))
+            logging.warning("Skip offending frame: [0x%x]", invalidind[0])
+            logging.debug("Frame Offset in file: [0x%x]", invalidind[0] * (seq + 4))
 
             offset = invalidind[0] * step  # actual offset in array
             length = int(pBIN[offset] / 4)  # length in words
