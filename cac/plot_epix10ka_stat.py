@@ -89,7 +89,7 @@ def main():
             # img_asic3 = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # lower left
 
             # get rid of the 15th bit
-            img_asic0 = np.bitwise_and(0x3FFF, img_asic0)
+            # img_asic0 = np.bitwise_and(0x3FFF, img_asic0)
             # img_asic0 = img_asic0[100:, :, :]  # skip first 10 frames
 
             # plot single pixel data
