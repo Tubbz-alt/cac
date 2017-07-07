@@ -90,11 +90,12 @@ def main():
 
             # get rid of the 15th bit
             img_asic0 = np.bitwise_and(0x3FFF, img_asic0)
+            # img_asic0 = img_asic0[100:, :, :]  # skip first 10 frames
 
             # plot single pixel data
-            plt.plot(img_asic0[:, 134, 1])
-            plt.title('Single Pix')
-            plt.show()
+            # plt.plot(img_asic0[:, 134, 1])
+            # plt.title('Single Pix')
+            # plt.show()
 
             img_avg = np.average(img_asic0, 0)  # mean across multiple frames
             img_std = np.std(img_asic0, 0)  # std across multiple frames
@@ -103,21 +104,22 @@ def main():
             plt.gray()
             plt.colorbar()
             plt.title('Image mean [' + cc.filename + ']')
-            plt.show()
-            # plt.savefig(bindatfile + '_avg.png', dpi=300)
+            # plt.show()
+            plt.savefig(cc.filename + '_avg.svg')
             plt.close()
 
             plt.hist(img_avg.ravel(), bins='auto')  # arguments are passed to np.histogram
-            plt.title("Image Mean Histrogram")
-            plt.show()
+            plt.title('Image Mean Histrogram [' + cc.filename + ']')
+            # plt.show()
+            plt.savefig(cc.filename + '_hst.svg')
             plt.close()
 
             plt.imshow(img_std)
             plt.gray()
             plt.colorbar()
             plt.title('Image std [' + cc.filename + ']')
-            plt.show()
-            # plt.savefig(bindatfile + '_std.png', dpi=300)
+            # plt.show()
+            plt.savefig(cc.filename + '_std.svg')
             plt.close()
 
             logging.info("Done")
