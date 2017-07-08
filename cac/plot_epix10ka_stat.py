@@ -16,6 +16,7 @@ Using CAC, plot the average and standard deviation of an image.
 import argparse
 from cac import cac
 import logging
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -92,35 +93,34 @@ def main():
             # img_asic0 = np.bitwise_and(0x3FFF, img_asic0)
             # img_asic0 = img_asic0[100:, :, :]  # skip first 10 frames
 
-            # plot single pixel data
-            # plt.plot(img_asic0[:, 134, 1])
+            # plot single pixel data [frames,y=row,x=col]
+            # plt.plot(img_asic0[:, 150, 136])
+            # plt.xlabel('frame number')
+            # plt.ylabel('amplitude')
             # plt.title('Single Pix')
             # plt.show()
 
             img_avg = np.average(img_asic0, 0)  # mean across multiple frames
             img_std = np.std(img_asic0, 0)  # std across multiple frames
 
-            plt.imshow(img_avg)
-            plt.gray()
+            plt.imshow(img_avg, cmap=cm.plasma)
+            # plt.gray()
             plt.colorbar()
             plt.title('Image mean [' + cc.filename + ']')
-            # plt.show()
             plt.savefig(cc.filename + '_avg.svg')
-            plt.close()
+            # plt.show()
 
             plt.hist(img_avg.ravel(), bins='auto')  # arguments are passed to np.histogram
             plt.title('Image Mean Histrogram [' + cc.filename + ']')
-            # plt.show()
             plt.savefig(cc.filename + '_hst.svg')
-            plt.close()
+            # plt.show()
 
-            plt.imshow(img_std)
-            plt.gray()
+            plt.imshow(img_std, cmap=cm.plasma)
+            # plt.gray()
             plt.colorbar()
             plt.title('Image std [' + cc.filename + ']')
-            # plt.show()
             plt.savefig(cc.filename + '_std.svg')
-            plt.close()
+            # plt.show()
 
             logging.info("Done")
 
