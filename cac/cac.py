@@ -21,7 +21,6 @@ class cac(object):
     """The CAC Class Object."""
 
     # binary data file constants
-    HEADER_SZ = 10  # number of 32-bit words in header
     # location of SequenceCount in Header
     # added by streamer
     SEQ_COUNT_OFFST = 4
@@ -45,16 +44,26 @@ class cac(object):
 
     def epix10ka(self):
         """ePix10a ASIC definitions."""
+        self.asicname = "epix10a"
+        # TODO(abunimeh) tot_chips should be in camera def not ASIC
+        self.tot_chips = 4  # total number of chips in cam
+
         self.tot_banks = 4  # total number of banks in a single asic (chip)
         self.cols = 48  # number of columns in bank
         self.tot_cols = self.tot_banks * self.cols  # 192 total columns in chip
         self.tot_rows = 178  # 176 rows + 2 inactive rows
         self.bitmask = 0x00003FFF
-        self.asicname = "epix10a"
-        self.frame_sz_bytes = 0  # frame size in bytes
+        # SuperRows are defined by Data Streamer. i.e. CameraRow i.e. a row of two ASICS
+        self.superrow = (self.tot_cols * self.tot_chips / 2) / 2  # two columns per word
+        self.header_sz = 10  # number of 32-bit words in header
+        self.envdata_sz = 384  # number of words in env data block
+        self.tps_sz = 2  # number of words in env data block
+        self.footer_sz = 1  # number of words in env data block
+        self.frame_sz = self.header_sz - 1 + 2 * self.tot_rows * self.superrow + \
+            self.envdata_sz + self.tps_sz + self.footer_sz  # frame size in bytes
+        self.frame_sz_bytes = int(self.frame_sz*4)  # frame size in bytes
+
         self.tot_frames = 0  # total number of frames in file
-        # TODO(abunimeh) tot_chips should be in camera def not ASIC
-        self.tot_chips = 4  # total number of chips in cam
         # pixel data in framee 68352 (32-bit words)
         self.PDATA_SZ = int(self.cols / 2 * self.tot_banks * self.tot_chips * self.tot_rows)
 
@@ -128,15 +137,13 @@ class cac(object):
         if pBIN is None:
             pBIN = self.pBIN
 
-        # figure out frame size (this is in bytes)
-        # assuming that all frames in file have the same exact size # TODO(abunimeh)
-        self.frame_sz_bytes = self.pBIN[0]
-
         # verify file sequence i.e. integrity
-        if not self.verify_seq_epix10ka(self.pBIN, self.frame_sz_bytes):
+        # 1st word is defined as a the frame size in bytes
+        if not self.verify_seq_epix10ka(self.pBIN, self.pBIN[0]):
             return False
 
-        # compensate for additional 32-bit word added by streamer # TODO(abunimeh) this is a bug
+        # compensate for additional 32-bit word added by streamer
+        # TODO(abunimeh) this is a bug. Value should be all inclusive!
         self.frame_sz_bytes = self.frame_sz_bytes + 4  # add 32-bits i.e. 4 bytes
         logging.debug('Frame size: 0x%x words', self.frame_sz_bytes)
 
@@ -164,12 +171,18 @@ class cac(object):
                                 ' difference. Some frames are missing!')
         return True
 
-    def verify_seq_epix10ka(self, pBIN=None, seq=None):
+    def verify_seq_epix10ka(self, pBIN=None, seq=None, itr=0):
         """Analyze binary data for epix10ka.
+
+        Note: This function will quickly return True if the file is not corrupt.
+        If there is a single frame in the middle of the data file the speed is relatively fast.
+        If the first frame has wrong size, things will slow down. The more corrupt frames the file
+        has the slower this function will be.
 
         Keyword Arguments:
                 pBIN: uint32 binary data from file
                 seq: word repeated multiple times in file.
+                itr: number of iterations it took me to return()
 
         Returns: False if checking fails, otherwise True
 
@@ -185,16 +198,24 @@ class cac(object):
             logging.error("File is corrupt. Frame size is bigger than file size.")
             return False
 
-        if step <= self.HEADER_SZ:
+        if step <= self.header_sz:
             logging.error("File is corrupt. Frame size is smaller than header.")
             return False
+
+        if seq != self.frame_sz_bytes:
+            logging.warning('frame [0x%x] size is 0x%x instead of 0x%x, trying to skip,...', itr,
+                            seq, self.frame_sz_bytes)
+            itr += 1
+            self.pBIN = pBIN[step:]
+            if not self.verify_seq_epix10ka(self.pBIN, self.pBIN[0], itr):
+                return False
 
         frame_szs = pBIN[::step]  # quickly get all frame sizes
         # find odd frame sizes, if any
         findx = np.array_equal(frame_szs, (np.full(frame_szs.size, seq, np.uint32)))
         if not findx:
             logging.warning('frame sizes are not equal, trying to skip,...')
-            logging.debug('sequence is: 0x%x words', seq)
+            logging.debug('frame size is: 0x%x bytes', seq)
 
             # compare expected seq with actual seq by subtraction
             invalid = frame_szs - seq
@@ -220,9 +241,12 @@ class cac(object):
             self.pBIN = np.concatenate((adjpBIN, skippBIN))  # combine to skip offending frame
 
             logging.debug("removed offending frame, trying again...")
-            if not self.verify_seq_epix10ka(self.pBIN, seq):
+            itr += 1
+            if not self.verify_seq_epix10ka(self.pBIN, seq, itr):
                 return False
+            return True
 
+        logging.debug("Number of iterations to reconstruct file: [%d]...", itr)
         return True
 
     def img2d(self, pBIN=None):
@@ -269,9 +293,9 @@ class cac(object):
         logging.debug('2D array ' + str(pBIN2D.shape))
 
         # get rid of header, env data block, and footer
-        # HEADER_SZ & PDATA_SZ are  multiplied by 2 because we defined them as 32-bit
+        # header_sz & PDATA_SZ are  multiplied by 2 because we defined them as 32-bit
         # words, now we are using them on 16-bit words, so they look twice as big
-        pBIN2D_pixels = pBIN2D[:, self.HEADER_SZ * 2:self.HEADER_SZ * 2 + self.PDATA_SZ * 2]
+        pBIN2D_pixels = pBIN2D[:, self.header_sz * 2:self.header_sz * 2 + self.PDATA_SZ * 2]
         logging.debug('2D pixels only ' + str(pBIN2D_pixels.shape))
         logging.debug('verify last element in first frame...' + str(pBIN2D_pixels[0][-1]))
 
