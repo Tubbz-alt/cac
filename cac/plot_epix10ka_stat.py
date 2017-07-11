@@ -32,6 +32,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debugging info.")
     parser.add_argument("-s", "--save", action="store_true", help="save npz array.")
+    parser.add_argument("-p", "--plot", action="store_true", help="plot using gui.")
+    parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
+    parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
+    parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
+    parser.add_argument("-g", "--singlepixel", nargs=2, type=int, metavar=('row', 'col'),
+                        help="plot single pixel across multiple frames.")
     parser.add_argument("-i", "--inputfile", nargs=1, metavar=('FILE'),
                         help="File name to plot.", required=True)
     args = parser.parse_args()
@@ -90,37 +96,71 @@ def main():
             # img_asic3 = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # lower left
 
             # get rid of the 15th bit
-            # img_asic0 = np.bitwise_and(0x3FFF, img_asic0)
-            # img_asic0 = img_asic0[100:, :, :]  # skip first 10 frames
+            if args.mask:
+                img_asic0 = np.bitwise_and(cc.str2num(args.mask[0]), img_asic0)
 
-            # plot single pixel data [frames,y=row,x=col]
-            # plt.plot(img_asic0[:, 150, 136])
-            # plt.xlabel('frame number')
-            # plt.ylabel('amplitude')
-            # plt.title('Single Pix')
-            # plt.show()
+            # grid rid of frames
+            if args.skip:
+                img_asic0 = img_asic0[args.skip[0]:, :, :]
 
             img_avg = np.average(img_asic0, 0)  # mean across multiple frames
             img_std = np.std(img_asic0, 0)  # std across multiple frames
 
-            plt.imshow(img_avg, cmap=cm.plasma)
-            # plt.gray()
-            plt.colorbar()
-            plt.title('Image mean [' + cc.filename + ']')
-            plt.savefig(cc.filename + '_avg.svg')
-            # plt.show()
+            if args.singlepixel:
+                # plot single pixel data [frames,y=row,x=col]
+                plt.plot(img_asic0[:, args.singlepixel[0], args.singlepixel[1]])
+                plt.xlabel('Frame number')
+                plt.ylabel('Amplitude')
+                plt.title('Single Pixel')
+                plt.show()
 
-            plt.hist(img_avg.ravel(), bins='auto')  # arguments are passed to np.histogram
-            plt.title('Image Mean Histrogram [' + cc.filename + ']')
-            plt.savefig(cc.filename + '_hst.svg')
-            # plt.show()
+            if args.exportplot:
+                plt.imshow(img_avg, cmap=cm.plasma)
+                # plt.gray()
+                plt.colorbar()
+                plt.title('Image mean [' + cc.filename + ']')
+                plt.savefig(cc.filename + '_avg.svg')
+                # plt.show()
+                plt.close()
 
-            plt.imshow(img_std, cmap=cm.plasma)
-            # plt.gray()
-            plt.colorbar()
-            plt.title('Image std [' + cc.filename + ']')
-            plt.savefig(cc.filename + '_std.svg')
-            # plt.show()
+                plt.hist(img_avg.ravel(), bins='auto')  # arguments are passed to np.histogram
+                plt.title('Image mean histrogram [' + cc.filename + ']')
+                plt.savefig(cc.filename + '_mhst.svg')
+                # plt.show()
+                plt.close()
+
+                plt.imshow(img_std, cmap=cm.plasma)
+                # plt.gray()
+                plt.colorbar()
+                plt.title('Image std [' + cc.filename + ']')
+                plt.savefig(cc.filename + '_std.svg')
+                # plt.show()
+                plt.close()
+
+                plt.hist(img_std.ravel(), bins='auto')  # arguments are passed to np.histogram
+                plt.title('Image std histrogram [' + cc.filename + ']')
+                plt.savefig(cc.filename + '_shst.svg')
+                # plt.show()
+                plt.close()
+
+            # all in one plot
+            if args.plot:
+                f, ax = plt.subplots(2, 2)
+                im0 = ax[0, 0].imshow(img_avg, cmap=cm.plasma)
+                ax[0, 0].set_title('Mean')
+                f.colorbar(im0, ax=ax[0, 0])
+                ax[0, 1].hist(img_avg.ravel(), bins='auto')
+                ax[0, 1].set_title('Mean Histrogram')
+                im1 = ax[1, 0].imshow(img_std, cmap=cm.plasma)
+                ax[1, 0].set_title('Standard Deviation')
+                f.colorbar(im1, ax=ax[1, 0])
+                ax[1, 1].hist(img_std.ravel(), bins='auto')
+                ax[1, 1].set_title('Standard Deviation Histogram')
+                # f.subplots_adjust(wspace=0.5, hspace=0.5)
+                # f.set_size_inches(11, 8.5)
+                # plt.savefig(cc.filename + '_plt.svg')
+                plt.tight_layout()
+                plt.show()
 
             logging.info("Done")
 
