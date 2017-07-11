@@ -288,3 +288,19 @@ class cac(object):
         self.pBIN = None  # we no longer need raw data
         self.img = img_sorted
         return self.img
+
+    def str2num(self, x):
+        """Convert a str decimal or hex to integer.
+
+        Keyword Arguments:
+                x: string number
+
+        Returns: integer
+
+        """
+        # default is integers
+        base = 10
+        # convert hex strings to hex values
+        if '0x' in x:
+            base = 16
+        return int(x, base)
