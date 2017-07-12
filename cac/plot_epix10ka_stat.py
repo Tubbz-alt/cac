@@ -111,20 +111,23 @@ def main():
                 plt.plot(img_asic0[:, args.singlepixel[0], args.singlepixel[1]])
                 plt.xlabel('Frame number')
                 plt.ylabel('Amplitude')
-                plt.title('Single Pixel')
+                plt.title(cc.filename + "\nPixel (%d,%d)" % (args.singlepixel[0],
+                                                             args.singlepixel[1]))
+                plt.savefig(cc.filename + '_r%dc%d.svg' %
+                            (args.singlepixel[0], args.singlepixel[1]))
                 plt.show()
 
             if args.exportplot:
                 plt.imshow(img_avg, cmap=cm.plasma)
                 # plt.gray()
                 plt.colorbar()
-                plt.title('Image mean [' + cc.filename + ']')
+                plt.title(cc.filename + '\nImage mean')
                 plt.savefig(cc.filename + '_avg.svg')
                 # plt.show()
                 plt.close()
 
                 plt.hist(img_avg.ravel(), bins='auto', histtype='step')
-                plt.title('Image mean histrogram [' + cc.filename + ']')
+                plt.title(cc.filename + '\nImage mean histrogram')
                 plt.savefig(cc.filename + '_mhst.svg')
                 # plt.show()
                 plt.close()
@@ -132,13 +135,13 @@ def main():
                 plt.imshow(img_std, cmap=cm.plasma)
                 # plt.gray()
                 plt.colorbar()
-                plt.title('Image std [' + cc.filename + ']')
+                plt.title(cc.filename + '\nImage std')
                 plt.savefig(cc.filename + '_std.svg')
                 # plt.show()
                 plt.close()
 
                 plt.hist(img_std.ravel(), bins='auto', histtype='step')
-                plt.title('Image std histrogram [' + cc.filename + ']')
+                plt.title(cc.filename + '\nImage std histrogram')
                 plt.savefig(cc.filename + '_shst.svg')
                 # plt.show()
                 plt.close()
