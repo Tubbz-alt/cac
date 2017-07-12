@@ -127,7 +127,7 @@ def main():
                 plt.close()
 
                 plt.hist(img_avg.ravel(), bins='auto', histtype='step')
-                plt.title(cc.filename + '\nImage mean histrogram')
+                plt.title(cc.filename + '\nImage mean histogram')
                 plt.savefig(cc.filename + '_mhst.svg')
                 # plt.show()
                 plt.close()
@@ -141,7 +141,7 @@ def main():
                 plt.close()
 
                 plt.hist(img_std.ravel(), bins='auto', histtype='step')
-                plt.title(cc.filename + '\nImage std histrogram')
+                plt.title(cc.filename + '\nImage std histogram')
                 plt.savefig(cc.filename + '_shst.svg')
                 # plt.show()
                 plt.close()
@@ -158,7 +158,7 @@ def main():
                 ax[1, 0].set_title('Standard Deviation')
                 f.colorbar(im1, ax=ax[1, 0])
                 ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
-                ax[1, 1].set_title('Standard Deviation Histogram')
+                ax[1, 1].set_title('Standard Deviation histogram')
                 # f.subplots_adjust(wspace=0.5, hspace=0.5)
                 # f.set_size_inches(11, 8.5)
                 # plt.savefig(cc.filename + '_plt.svg')
