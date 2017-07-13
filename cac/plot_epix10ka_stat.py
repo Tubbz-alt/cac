@@ -32,7 +32,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debugging info.")
     parser.add_argument("-s", "--save", action="store_true", help="save npz array.")
-    parser.add_argument("-p", "--plot", action="store_true", help="plot using gui.")
+    parser.add_argument("-p", "--plot", action="store_true", help="plot all in one using gui.")
+    parser.add_argument("-n", "--nplots", action="store_true", help="seperate plot using gui.")
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
@@ -111,43 +112,56 @@ def main():
                 plt.plot(img_asic0[:, args.singlepixel[0], args.singlepixel[1]])
                 plt.xlabel('Frame number')
                 plt.ylabel('Amplitude')
+                plt.tight_layout()
                 plt.title(cc.filename + "\nPixel (%d,%d)" % (args.singlepixel[0],
                                                              args.singlepixel[1]))
-                plt.savefig(cc.filename + '_r%dc%d.svg' %
-                            (args.singlepixel[0], args.singlepixel[1]))
-                plt.show()
+                if args.exportplot:
+                    plt.savefig(cc.filename + '_r%dc%d.svg' %
+                                (args.singlepixel[0], args.singlepixel[1]))
+                else:
+                    plt.show()
 
-            if args.exportplot:
+            if args.nplots or args.exportplot:
                 plt.imshow(img_avg, cmap=cm.plasma)
-                # plt.gray()
                 plt.colorbar()
+                plt.tight_layout()
                 plt.title(cc.filename + '\nImage mean')
-                plt.savefig(cc.filename + '_avg.svg')
-                # plt.show()
+                if args.exportplot:
+                    plt.savefig(cc.filename + '_avg.svg')
+                else:
+                    plt.show()
                 plt.close()
 
                 plt.hist(img_avg.ravel(), bins='auto', histtype='step')
                 plt.title(cc.filename + '\nImage mean histogram')
-                plt.savefig(cc.filename + '_mhst.svg')
-                # plt.show()
+                plt.tight_layout()
+                if args.exportplot:
+                    plt.savefig(cc.filename + '_mhst.svg')
+                else:
+                    plt.show()
                 plt.close()
 
                 plt.imshow(img_std, cmap=cm.plasma)
-                # plt.gray()
                 plt.colorbar()
+                plt.tight_layout()
                 plt.title(cc.filename + '\nImage std')
-                plt.savefig(cc.filename + '_std.svg')
-                # plt.show()
+                if args.exportplot:
+                    plt.savefig(cc.filename + '_std.svg')
+                else:
+                    plt.show()
                 plt.close()
 
                 plt.hist(img_std.ravel(), bins='auto', histtype='step')
                 plt.title(cc.filename + '\nImage std histogram')
-                plt.savefig(cc.filename + '_shst.svg')
-                # plt.show()
+                plt.tight_layout()
+                if args.exportplot:
+                    plt.savefig(cc.filename + '_shst.svg')
+                else:
+                    plt.show()
                 plt.close()
 
             # all in one plot
-            if args.plot:
+            if args.plot or args.exportplot:
                 f, ax = plt.subplots(2, 2)
                 im0 = ax[0, 0].imshow(img_avg, cmap=cm.plasma)
                 ax[0, 0].set_title('Mean')
@@ -160,10 +174,13 @@ def main():
                 ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
                 ax[1, 1].set_title('Standard Deviation histogram')
                 # f.subplots_adjust(wspace=0.5, hspace=0.5)
-                # f.set_size_inches(11, 8.5)
-                # plt.savefig(cc.filename + '_plt.svg')
                 plt.tight_layout()
-                plt.show()
+                if args.exportplot:
+                    f.set_size_inches(11, 8.5)
+                    plt.savefig(cc.filename + '_plt.svg')
+                else:
+                    plt.show()
+                plt.close()
 
             logging.info("Done")
 
