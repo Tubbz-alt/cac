@@ -33,7 +33,7 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debugging info.")
     parser.add_argument("-s", "--save", action="store_true", help="save npz array.")
     parser.add_argument("-p", "--plot", action="store_true", help="plot all in one using gui.")
-    parser.add_argument("-n", "--nplots", action="store_true", help="seperate plot using gui.")
+    parser.add_argument("-n", "--nplots", action="store_true", help="seperate plots using gui.")
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
@@ -112,7 +112,7 @@ def main():
                 plt.plot(img_asic0[:, args.singlepixel[0], args.singlepixel[1]])
                 plt.xlabel('Frame number')
                 plt.ylabel('Amplitude')
-                plt.tight_layout()
+                # plt.tight_layout()
                 plt.title(cc.filename + "\nPixel (%d,%d)" % (args.singlepixel[0],
                                                              args.singlepixel[1]))
                 if args.exportplot:
@@ -121,7 +121,7 @@ def main():
                 else:
                     plt.show()
 
-            if args.nplots or args.exportplot:
+            if args.nplots:
                 plt.imshow(img_avg, cmap=cm.plasma)
                 plt.colorbar()
                 plt.tight_layout()
@@ -161,8 +161,10 @@ def main():
                 plt.close()
 
             # all in one plot
-            if args.plot or args.exportplot:
+            if args.plot:
                 f, ax = plt.subplots(2, 2)
+                f.suptitle(cc.filename, fontsize=14)
+                f.set_size_inches(11, 8.5)
                 im0 = ax[0, 0].imshow(img_avg, cmap=cm.plasma)
                 ax[0, 0].set_title('Mean')
                 f.colorbar(im0, ax=ax[0, 0])
@@ -173,10 +175,8 @@ def main():
                 f.colorbar(im1, ax=ax[1, 0])
                 ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
                 ax[1, 1].set_title('Standard Deviation histogram')
-                # f.subplots_adjust(wspace=0.5, hspace=0.5)
-                plt.tight_layout()
+                # plt.tight_layout()
                 if args.exportplot:
-                    f.set_size_inches(11, 8.5)
                     plt.savefig(cc.filename + '_plt.svg')
                 else:
                     plt.show()
