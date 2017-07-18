@@ -26,6 +26,8 @@ class cac(object):
     SEQ_COUNT_OFFST = 4
     # pixel data in frame 68352
     PDATA_SZ = 0  # number of 32-bit words
+    # total number of chips in cam
+    TOT_CHIPS = 4
 
     def __enter__(self):
         """CAC enter."""
@@ -45,16 +47,13 @@ class cac(object):
     def epix10ka(self):
         """ePix10a ASIC definitions."""
         self.asicname = "epix10a"
-        # TODO(abunimeh) tot_chips should be in camera def not ASIC
-        self.tot_chips = 4  # total number of chips in cam
-
         self.tot_banks = 4  # total number of banks in a single asic (chip)
         self.cols = 48  # number of columns in bank
         self.tot_cols = self.tot_banks * self.cols  # 192 total columns in chip
         self.tot_rows = 178  # 176 rows + 2 inactive rows
         self.bitmask = 0x00003FFF
         # SuperRows are defined by Data Streamer. i.e. CameraRow i.e. a row of two ASICS
-        self.superrow = (self.tot_cols * self.tot_chips / 2) / 2  # two columns per word
+        self.superrow = (self.tot_cols * self.TOT_CHIPS / 2) / 2  # two columns per word
         self.header_sz = 10  # number of 32-bit words in header
         self.envdata_sz = 384  # number of words in env data block
         self.tps_sz = 2  # number of words in env data block
@@ -65,7 +64,7 @@ class cac(object):
 
         self.tot_frames = 0  # total number of frames in file
         # pixel data in framee 68352 (32-bit words)
-        self.PDATA_SZ = int(self.cols / 2 * self.tot_banks * self.tot_chips * self.tot_rows)
+        self.PDATA_SZ = int(self.cols / 2 * self.tot_banks * self.TOT_CHIPS * self.tot_rows)
 
     def load(self, filename):
         """Load file content to memory as unsigned 32-bit integer vector.
