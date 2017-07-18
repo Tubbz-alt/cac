@@ -34,6 +34,7 @@ def main():
     parser.add_argument("-s", "--save", action="store_true", help="save npz array.")
     parser.add_argument("-p", "--plot", action="store_true", help="plot all in one using gui.")
     parser.add_argument("-n", "--nplots", action="store_true", help="seperate plots using gui.")
+    parser.add_argument("-b", "--banks", action="store_true", help="seperate bank plots using gui.")
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
@@ -87,100 +88,132 @@ def main():
             if args.save:
                 cc.save()
 
-            # ASIC arrangement
-            #        C0     C1
-            # R0   ASIC2 - ASIC1
-            # R1   ASIC3 - ASIC0
-            img_asic0 = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
-            # img_asic1 = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
-            # img_asic2 = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
-            # img_asic3 = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # lower left
+            for chip in range(cc.TOT_CHIPS):
+                # ASIC arrangement
+                #        C0     C1
+                # R0   ASIC2 - ASIC1
+                # R1   ASIC3 - ASIC0
+                if chip == 0:
+                    iasic = cc.img[:, cc.tot_rows:, :cc.tot_cols]  # lower left
+                elif chip == 1:
+                    iasic = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
+                elif chip == 2:
+                    iasic = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
+                elif chip == 3:
+                    iasic = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
 
-            # get rid of the 15th bit
-            if args.mask:
-                img_asic0 = np.bitwise_and(cc.str2num(args.mask[0]), img_asic0)
+                # get rid of the 15th bit
+                if args.mask:
+                    iasic = np.bitwise_and(cc.str2num(args.mask[0]), iasic)
 
-            # grid rid of frames
-            if args.skip:
-                img_asic0 = img_asic0[args.skip[0]:, :, :]
+                # grid rid of frames
+                if args.skip:
+                    iasic = iasic[args.skip[0]:, :, :]
 
-            img_avg = np.average(img_asic0, 0)  # mean across multiple frames
-            img_std = np.std(img_asic0, 0)  # std across multiple frames
+                img_avg = np.average(iasic, 0)  # mean across multiple frames
+                img_std = np.std(iasic, 0)  # std across multiple frames
 
-            if args.singlepixel:
-                # plot single pixel data [frames,y=row,x=col]
-                plt.plot(img_asic0[:, args.singlepixel[0], args.singlepixel[1]])
-                plt.xlabel('Frame number')
-                plt.ylabel('Amplitude')
-                # plt.tight_layout()
-                plt.title(cc.filename + "\nPixel (%d,%d)" % (args.singlepixel[0],
-                                                             args.singlepixel[1]))
-                if args.exportplot:
-                    plt.savefig(cc.filename + '_r%dc%d.svg' %
-                                (args.singlepixel[0], args.singlepixel[1]))
-                else:
-                    plt.show()
+                if args.singlepixel:
+                    # plot single pixel data [frames,y=row,x=col]
+                    plt.plot(iasic[:, args.singlepixel[0], args.singlepixel[1]])
+                    plt.xlabel('Frame number')
+                    plt.ylabel('Amplitude')
+                    # plt.tight_layout()
+                    plt.title(cc.filename + "ASIC %d" % (chip) +
+                              "\nPixel (%d,%d)" % (args.singlepixel[0],
+                                                   args.singlepixel[1]))
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_r%dc%d.svg' %
+                                    (args.singlepixel[0], args.singlepixel[1]))
+                    else:
+                        plt.show()
 
-            if args.nplots:
-                plt.imshow(img_avg, cmap=cm.plasma)
-                plt.colorbar()
-                plt.tight_layout()
-                plt.title(cc.filename + '\nImage mean')
-                if args.exportplot:
-                    plt.savefig(cc.filename + '_avg.svg')
-                else:
-                    plt.show()
-                plt.close()
+                if args.nplots:
+                    plt.imshow(img_avg, cmap=cm.plasma)
+                    plt.colorbar()
+                    plt.tight_layout()
+                    plt.title(cc.filename + '\nASIC %d Image mean' % (chip))
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_avg.svg' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
 
-                plt.hist(img_avg.ravel(), bins='auto', histtype='step')
-                plt.title(cc.filename + '\nImage mean histogram')
-                plt.tight_layout()
-                if args.exportplot:
-                    plt.savefig(cc.filename + '_mhst.svg')
-                else:
-                    plt.show()
-                plt.close()
+                    plt.hist(img_avg.ravel(), bins='auto', histtype='step')
+                    plt.title(cc.filename + '\nASIC %d Image mean histogram' % (chip))
+                    plt.tight_layout()
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_mhst.svg' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
 
-                plt.imshow(img_std, cmap=cm.plasma)
-                plt.colorbar()
-                plt.tight_layout()
-                plt.title(cc.filename + '\nImage std')
-                if args.exportplot:
-                    plt.savefig(cc.filename + '_std.svg')
-                else:
-                    plt.show()
-                plt.close()
+                    plt.imshow(img_std, cmap=cm.plasma)
+                    plt.colorbar()
+                    plt.tight_layout()
+                    plt.title(cc.filename + '\nASIC %d Image std' % (chip))
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_std.svg')
+                    else:
+                        plt.show()
+                    plt.close()
 
-                plt.hist(img_std.ravel(), bins='auto', histtype='step')
-                plt.title(cc.filename + '\nImage std histogram')
-                plt.tight_layout()
-                if args.exportplot:
-                    plt.savefig(cc.filename + '_shst.svg')
-                else:
-                    plt.show()
-                plt.close()
+                    plt.hist(img_std.ravel(), bins='auto', histtype='step')
+                    plt.title(cc.filename + '\nASIC %d Image std histogram' % (chip))
+                    plt.tight_layout()
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_shst.svg' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
 
-            # all in one plot
-            if args.plot:
-                f, ax = plt.subplots(2, 2)
-                f.suptitle(cc.filename, fontsize=14)
-                f.set_size_inches(11, 8.5)
-                im0 = ax[0, 0].imshow(img_avg, cmap=cm.plasma)
-                ax[0, 0].set_title('Mean')
-                f.colorbar(im0, ax=ax[0, 0])
-                ax[0, 1].hist(img_avg.ravel(), bins='auto', histtype='step')
-                ax[0, 1].set_title('Mean Histrogram')
-                im1 = ax[1, 0].imshow(img_std, cmap=cm.plasma)
-                ax[1, 0].set_title('Standard Deviation')
-                f.colorbar(im1, ax=ax[1, 0])
-                ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
-                ax[1, 1].set_title('Standard Deviation histogram')
-                # plt.tight_layout()
-                if args.exportplot:
-                    plt.savefig(cc.filename + '_plt.svg')
-                else:
-                    plt.show()
-                plt.close()
+                # all in one plot
+                if args.plot:
+                    f, ax = plt.subplots(2, 2)
+                    f.suptitle(cc.filename + " ASIC %d" % (chip), fontsize=14)
+                    f.set_size_inches(11, 8.5)
+                    im0 = ax[0, 0].imshow(img_avg, cmap=cm.plasma)
+                    ax[0, 0].set_title('Mean')
+                    f.colorbar(im0, ax=ax[0, 0])
+                    ax[0, 1].hist(img_avg.ravel(), bins='auto', histtype='step')
+                    ax[0, 1].set_title('Mean Histrogram')
+                    im1 = ax[1, 0].imshow(img_std, cmap=cm.plasma)
+                    ax[1, 0].set_title('Standard Deviation')
+                    f.colorbar(im1, ax=ax[1, 0])
+                    ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
+                    ax[1, 1].set_title('Standard Deviation histogram')
+                    # plt.tight_layout()
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_plt.svg' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
+
+                if args.banks:
+                    f, ax = plt.subplots(4, 4)
+                    f.suptitle(cc.filename + " ASIC %d" % (chip), fontsize=14)
+                    f.set_size_inches(22, 17)
+                    for bank in range(cc.tot_banks):
+                        b_avg = np.average(iasic[:, :, bank*cc.cols:(bank+1)*cc.cols-1], 0)
+                        b_std = np.std(iasic[:, :, bank*cc.cols:(bank+1)*cc.cols-1], 0)
+
+                        im0 = ax[bank, 0].imshow(b_avg, cmap=cm.plasma)
+                        # ax[bank, 0].set_title('Bank %d Mean' % (bank))
+                        f.colorbar(im0, ax=ax[bank, 0])
+                        ax[bank, 1].hist(b_avg.ravel(), bins='auto', histtype='step')
+                        # ax[bank, 1].set_title('Bank %d Mean Histrogram' % (bank))
+                        im1 = ax[bank, 2].imshow(b_std, cmap=cm.plasma)
+                        # ax[bank, 2].set_title('Bank %d Standard Deviation' % (bank))
+                        f.colorbar(im1, ax=ax[bank, 2])
+                        ax[bank, 3].hist(b_std.ravel(), bins='auto', histtype='step')
+                        # ax[bank, 3].set_title('Bank %d Standard Deviation histogram' % (bank))
+
+                    plt.tight_layout()
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_banks_plt.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
 
             logging.info("Done")
 
