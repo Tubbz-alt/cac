@@ -28,6 +28,7 @@ class cac(object):
     PDATA_SZ = 0  # number of 32-bit words
     # total number of chips in cam
     TOT_CHIPS = 4
+    MAX_INV_FRAMES = 100
 
     def __enter__(self):
         """CAC enter."""
@@ -187,6 +188,10 @@ class cac(object):
 
         """
         if seq is None:
+            return False
+
+        if itr > self.MAX_INV_FRAMES:
+            logging.error("File is corrupt. Too many invalid frames.")
             return False
 
         # seq is defined in bytes, convert it to words then add one for uncounted 1st word
