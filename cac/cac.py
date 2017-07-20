@@ -28,7 +28,6 @@ class cac(object):
     PDATA_SZ = 0  # number of 32-bit words
     # total number of chips in cam
     TOT_CHIPS = 4
-    MAX_INV_FRAMES = 100
 
     def __enter__(self):
         """CAC enter."""
@@ -140,6 +139,7 @@ class cac(object):
         # verify file sequence i.e. integrity
         # 1st word is defined as a the frame size in bytes
         if not self.verify_seq_epix10ka(self.pBIN, self.pBIN[0]):
+            logging.error('data failed verification!')
             return False
 
         # compensate for additional 32-bit word added by streamer
@@ -187,68 +187,65 @@ class cac(object):
         Returns: False if checking fails, otherwise True
 
         """
-        if seq is None:
-            return False
+        while True:
+            logging.debug("checking data [%d]...", itr)
 
-        if itr > self.MAX_INV_FRAMES:
-            logging.error("File is corrupt. Too many invalid frames.")
-            return False
-
-        # seq is defined in bytes, convert it to words then add one for uncounted 1st word
-        step = int(seq / 4) + 1
-
-        # verify if we have a valid frame size
-        if step >= pBIN.size:
-            logging.error("File is corrupt. Frame size is bigger than file size.")
-            return False
-
-        if step <= self.header_sz:
-            logging.error("File is corrupt. Frame size is smaller than header.")
-            return False
-
-        if seq != self.frame_sz_bytes:
-            logging.warning('frame [0x%x] size is 0x%x instead of 0x%x, trying to skip,...', itr,
-                            seq, self.frame_sz_bytes)
-            itr += 1
-            self.pBIN = pBIN[step:]
-            if not self.verify_seq_epix10ka(self.pBIN, self.pBIN[0], itr):
+            if seq is None:
+                logging.error("Missing frame size.")
                 return False
 
-        frame_szs = pBIN[::step]  # quickly get all frame sizes
-        # find odd frame sizes, if any
-        findx = np.array_equal(frame_szs, (np.full(frame_szs.size, seq, np.uint32)))
-        if not findx:
-            logging.warning('frame sizes are not equal, trying to skip,...')
-            logging.debug('frame size is: 0x%x bytes', seq)
-
-            # compare expected seq with actual seq by subtraction
-            invalid = frame_szs - seq
-
-            invalidind = invalid.nonzero()[0]  # first occurrence
-            logging.warning("Skip offending frame: [0x%x]", invalidind[0])
-            logging.debug("Frame Offset in file: [0x%x]", invalidind[0] * (seq + 4))
-
-            offset = invalidind[0] * step  # actual offset in array
-            length = int(pBIN[offset] / 4)  # length in words
-
-            if offset > pBIN.size or offset + length + 1 > pBIN.size:
+            # seq is defined in bytes, convert it to words then add one for uncounted 1st word
+            step = int(seq / 4) + 1
+            # verify if we have a valid frame size
+            if step >= self.pBIN.size:
                 logging.error("File is corrupt. Frame size is bigger than file size.")
                 return False
 
-            logging.debug("Skipping Frame [0x%x], len=[0x%x], ... ", invalidind[0], length)
-
-            adjpBIN = pBIN[:offset]  # slice until offending frame
-            logging.debug("last valid frame footer : 0x%x", adjpBIN[-1])
-            skippBIN = pBIN[offset + length + 1:]
-            logging.debug("next frame word: 0x%x", skippBIN[0])
-
-            self.pBIN = np.concatenate((adjpBIN, skippBIN))  # combine to skip offending frame
-
-            logging.debug("removed offending frame, trying again...")
-            itr += 1
-            if not self.verify_seq_epix10ka(self.pBIN, seq, itr):
+            if step <= self.header_sz:
+                logging.error("File is corrupt. Frame size is smaller than header.")
                 return False
-            return True
+
+            if seq != self.frame_sz_bytes:
+                logging.warning('frame [0x%x] size is 0x%x instead of 0x%x, trying to skip,...',
+                                itr, seq, self.frame_sz_bytes)
+                itr += 1
+                self.pBIN = self.pBIN[step:]
+                seq = self.pBIN[0]
+                continue
+
+            frame_szs = self.pBIN[::step]  # quickly get all frame sizes
+            # find odd frame sizes, if any
+            findx = np.array_equal(frame_szs, (np.full(frame_szs.size, seq, np.uint32)))
+            if not findx:
+                logging.warning('frame sizes are not equal, trying to skip,...')
+                # compare expected seq with actual seq by subtraction
+                invalid = frame_szs - seq
+
+                invalidind = invalid.nonzero()[0]  # first occurrence
+                logging.warning("Skip offending frame: [0x%x]", invalidind[0])
+                logging.debug("Frame Offset in file: [0x%x]", invalidind[0] * (seq + 4))
+
+                offset = invalidind[0] * step  # actual offset in array
+                length = int(self.pBIN[offset] / 4)  # length in words
+
+                if offset > self.pBIN.size or offset + length + 1 > self.pBIN.size:
+                    logging.error("File is corrupt. Frame size is bigger than file size.")
+                    return False
+
+                logging.debug("Skipping Frame#[0x%x], len=[0x%x], size=[0x%x] ", invalidind[0],
+                              length, self.pBIN[offset])
+
+                adjpBIN = self.pBIN[:offset]  # slice until offending frame
+                logging.debug("last valid frame footer : 0x%x", adjpBIN[-1])
+                skippBIN = self.pBIN[offset + length + 1:]
+                logging.debug("next frame word: 0x%x", skippBIN[0])
+
+                self.pBIN = np.concatenate((adjpBIN, skippBIN))  # combine to skip offending frame
+
+                logging.debug("removed offending frame, trying again...")
+                itr += 1
+                continue
+            break
 
         logging.debug("Number of iterations to reconstruct file: [%d]...", itr)
         return True
@@ -270,9 +267,9 @@ class cac(object):
 
         if self.asicname == "epix10a":
             # check if binary data is OK
-            if not self.check_epix10ka(pBIN):
+            if not self.check_epix10ka(self.pBIN):
                 return None
-            return self.img2d_epix10ka(pBIN)  # 2D transformation
+            return self.img2d_epix10ka(self.pBIN)  # 2D transformation
 
         logging.debug('asicname is not defined, cannot img2d()')
         return None
