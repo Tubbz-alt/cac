@@ -37,6 +37,7 @@ def main():
     parser.add_argument("-b", "--banks", action="store_true", help="seperate bank plots using gui.")
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
+    parser.add_argument("-r", "--rmrow", nargs=1, metavar=('rmrow'), type=int, help="remove rows.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
     parser.add_argument("-g", "--singlepixel", nargs=2, type=int, metavar=('row', 'col'),
                         help="plot single pixel across multiple frames.")
@@ -109,6 +110,10 @@ def main():
                 # grid rid of frames
                 if args.skip:
                     iasic = iasic[args.skip[0]:, :, :]
+
+                # grid rid of frames
+                if args.rmrow:
+                    iasic = iasic[:, :cc.tot_rows-args.rmrow[0], :]
 
                 img_avg = np.average(iasic, 0)  # mean across multiple frames
                 img_std = np.std(iasic, 0)  # std across multiple frames
