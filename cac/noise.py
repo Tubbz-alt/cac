@@ -111,8 +111,8 @@ def main():
                     # f.set_size_inches(22, 17)
                     for bank in range(cc.tot_banks):
                         b_data = iasic[:, :, bank*cc.cols:(bank+1)*cc.cols-1]
-                        print("ASIC %d bank %d, mu=%f, sigma= %f" % (chip, bank, np.mean(b_data),
-                              np.std(b_data)))
+                        logging.info("ASIC %d bank %d, mu=%f, sigma= %f" % (chip, bank,
+                                     np.mean(b_data), np.std(b_data)))
                         # b_avg = np.average(b_data, 0)
 
                         ax[bank].hist(b_data.ravel(), bins='auto', histtype='step')
