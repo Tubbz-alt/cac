@@ -111,7 +111,7 @@ def main():
                 if args.skip:
                     iasic = iasic[args.skip[0]:, :, :]
 
-                # grid rid of frames
+                # grid rid of rows from bottom
                 if args.rmrow:
                     iasic = iasic[:, :cc.tot_rows-args.rmrow[0], :]
 
