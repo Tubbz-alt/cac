@@ -16,7 +16,6 @@ Using CAC, plot the average and standard deviation of an ADC.
 import argparse
 from cac import cac
 import logging
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import os
