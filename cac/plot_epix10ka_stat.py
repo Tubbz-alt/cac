@@ -84,6 +84,7 @@ def main():
             if cc.img is None:
                 logging.error("Binary data is missing!")
                 sys.exit(1)
+            logging.debug('image shape ' + str(cc.img.shape))
 
             # save npz data after analysis
             if args.save:
