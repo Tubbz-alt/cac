@@ -166,6 +166,8 @@ class cac(object):
 
         if frames_total != last_seq_cnt:
             logging.warning('Total number of frames in file does not equal SequenceCount')
+            frame_seqs = self.pBIN[self.SEQ_COUNT_OFFST::frame_sz]
+            np.savetxt(self.filename + '_seqs.csv', frame_seqs, delimiter='\n', fmt='%u')
             if frames_total - 1 != last_seq_cnt - first_seq_cnt:
                 logging.warning('Total number of frames does not equal SequenceCount'
                                 ' difference. Some frames are missing!')
@@ -238,7 +240,8 @@ class cac(object):
                 adjpBIN = self.pBIN[:offset]  # slice until offending frame
                 logging.debug("last valid frame footer : 0x%x", adjpBIN[-1])
                 skippBIN = self.pBIN[offset + length + 1:]
-                logging.debug("next frame word: 0x%x", skippBIN[0])
+                if offset + length + 1 < self.pBIN.size:
+                    logging.debug("next frame word: 0x%x", skippBIN[0])
 
                 self.pBIN = np.concatenate((adjpBIN, skippBIN))  # combine to skip offending frame
 
