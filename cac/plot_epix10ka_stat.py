@@ -39,6 +39,7 @@ def main():
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
     parser.add_argument("-r", "--rmrow", nargs=1, metavar=('rmrow'), type=int, help="remove rows.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
+    parser.add_argument("-a", "--asic", nargs=1, metavar=('asic'), type=int, help="asic index.")
     parser.add_argument("-g", "--singlepixel", nargs=2, type=int, metavar=('row', 'col'),
                         help="plot single pixel across multiple frames.")
     parser.add_argument("-i", "--inputfile", nargs=1, metavar=('FILE'),
@@ -95,15 +96,20 @@ def main():
                 #        C0     C1
                 # R0   ASIC2 - ASIC1
                 # R1   ASIC3 - ASIC0
-                if chip == 0:
-                    iasic = cc.img[:, cc.tot_rows:, :cc.tot_cols]  # lower left
-                elif chip == 1:
-                    iasic = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
-                elif chip == 2:
-                    iasic = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
-                elif chip == 3:
-                    iasic = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
 
+                if args.asic:
+                    if args.asic[0] != chip:
+                        # skip other asics
+                        continue
+
+                if chip == 0:
+                    iasic = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
+                elif chip == 1:
+                    iasic = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
+                elif chip == 2:
+                    iasic = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
+                elif chip == 3:
+                    iasic = cc.img[:, cc.tot_rows:, :cc.tot_cols]  # lower left
                 # get rid of the 15th bit
                 if args.mask:
                     iasic = np.bitwise_and(cc.str2num(args.mask[0]), iasic)
