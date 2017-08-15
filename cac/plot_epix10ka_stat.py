@@ -123,6 +123,7 @@ def main():
                 if args.rmrow:
                     iasic = iasic[:, :cc.tot_rows-args.rmrow[0], :]
 
+                # remove all data except baseline
                 if args.baseline:
                     iasic = iasic[:, cc.tot_rows-2:cc.tot_rows-1, :]
 
