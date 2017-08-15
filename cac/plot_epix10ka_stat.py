@@ -35,6 +35,7 @@ def main():
     parser.add_argument("-p", "--plot", action="store_true", help="plot all in one using gui.")
     parser.add_argument("-n", "--nplots", action="store_true", help="seperate plots using gui.")
     parser.add_argument("-b", "--banks", action="store_true", help="seperate bank plots using gui.")
+    parser.add_argument("-l", "--baseline", action="store_true", help="baseline only.")
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
     parser.add_argument("-r", "--rmrow", nargs=1, metavar=('rmrow'), type=int, help="remove rows.")
@@ -121,6 +122,9 @@ def main():
                 # grid rid of rows from bottom
                 if args.rmrow:
                     iasic = iasic[:, :cc.tot_rows-args.rmrow[0], :]
+
+                if args.baseline:
+                    iasic = iasic[:, cc.tot_rows-2:cc.tot_rows-1, :]
 
                 img_avg = np.average(iasic, 0)  # mean across multiple frames
                 img_std = np.std(iasic, 0)  # std across multiple frames
