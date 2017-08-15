@@ -4,8 +4,6 @@
 """
 Plots epix10ka linearity statistics.
 
-Using CAC, plot the average and standard deviation of an image.
-
 :Author: Faisal Abu-Nimeh (abunimeh@slac.stanford.edu)
 :Licesnse: https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html
 :Date: 201707
@@ -44,8 +42,13 @@ for path in pathlist:
     min_px = min(px.size, npx.size)
     os.chdir(pwd)
 
+logging.info("min px size is %d", min_px)
+plt.plot(px.T, '-')
+plt.show()
+
 # px = px[20:23, :]
-TOP_BTM_DIFF = 5000
+# TOP_BTM_DIFF = 230 # tr0
+TOP_BTM_DIFF = 1000  # tr1
 indexes = np.zeros(px.shape[0], dtype=int)
 for r in range(px.shape[0]):
     diffs = np.ediff1d(px[r, :].astype(np.int))
@@ -61,22 +64,34 @@ if APEAK:
     for r in range(px.shape[0]):
         px[r, :] = np.roll(px[r, :], rollval[r])
 
+# find falling edge
+TOP_BTM_DIFF = 5000
+indexes = np.zeros(px.shape[0], dtype=int)
+for r in range(px.shape[0]):
+    diffs = np.ediff1d(px[r, :].astype(np.int))
+    peak = np.where(abs(diffs) > TOP_BTM_DIFF)[0]
+    if peak.shape[0] > 1:  # multiple peaks
+        peak = peak[0]  # take first one
+    indexes[r] = peak
+
 # plot average across multiple runs
 plt.title('%s\n%s runs Linearity Test Pixel (%d,%d), tr1 00' % (filename, str(px.shape[0]),
           row, col))
-# px_avg = np.average(px, 0)
-# px_std = np.std(px, 0)
-# plt.errorbar(np.arange(min_px), px_avg, yerr=px_std, fmt='--.',  ecolor='r')
-# plt.show()
+px_avg = np.average(px, 0)
+px_std = np.std(px, 0)
+plt.errorbar(np.arange(min_px), px_avg, yerr=px_std, fmt='--.',  ecolor='r')
+plt.plot(px.T, '-')
+plt.show()
 
 # plot poly fits
 # create axis
 x = np.arange(min_px)
-rampstart = 660
-rampstop = max(indexes)+1
+# rampstart = 150 # tr0
+rampstart = 660  # tr1
+rampstop = max(indexes)-3
 # fitstart = max(indexes)+1
 # fitstart = 870
-fitstart = rampstop
+fitstart = rampstop+6
 
 # tail after autoranging switch. we are only interested in this range
 rx = x[rampstart:rampstop]
@@ -97,21 +112,36 @@ ty = px[:, fitstart:]
 txflat = np.tile(tx, px.shape[0])
 tyflat = ty.ravel()  # flatten y-axis for multiple observations
 
-tcoeff = np.polyfit(txflat, tyflat, 1)  # first order polyfit or tail
+tcoeff = np.polyfit(txflat, tyflat, 1)  # first order polyfit for tail
 tfit1 = np.poly1d(tcoeff)
 
 plt.plot(px.T, 'k.')
 plt.plot(rx, rfit1(rx), '-', linewidth=3)
 plt.plot(tx, tfit1(tx), '-', linewidth=3)
 
-newy = rfit1(rampstop)
-newc = newy - tcoeff[0] * rampstop
-newtcoeff = tcoeff.copy()
-newtcoeff[1] = newc
-newtfit1 = np.poly1d(newtcoeff)
-newty = ty+newtfit1(tx)-tfit1(tx)
-plt.plot(txflat, newty.ravel(), '.', color='#808080', alpha=.15)
-plt.plot(tx, newtfit1(tx), '-', linewidth=3)
+rtheta = np.arctan(rcoeff[0])
+ttheta = np.arctan(tcoeff[0])
+k = rcoeff[0]/tcoeff[0]
+yoff = rfit1(rampstop)
+tintercept = -1*tcoeff[1]/tcoeff[0]
+
+newtxflat = (txflat-rampstop) * np.cos(rtheta)/np.cos(ttheta) + rampstop
+newtyflat = (tyflat-tfit1(rampstop)) * np.sin(rtheta)/np.sin(ttheta) + rfit1(rampstop)
+
+plt.plot(newtxflat, newtyflat, '.', color='#808080')
+
+# rotation matrix
+# rotatetheta = rtheta - ttheta
+# c, s = np.cos(rotatetheta), np.sin(rotatetheta)
+# R = np.matrix([[c, -s], [s, c]])
+
+# replot scaled fit
+tlen = tx.size/np.cos(ttheta)
+newtx_len = np.cos(rtheta) * tlen
+newtx = rampstop + np.arange(newtx_len)
+
+plt.plot(newtx, rfit1(newtx), '-', linewidth=3)
+
 plt.show()
 
 print(rfit1)
