@@ -107,11 +107,9 @@ def main():
                         continue
 
                 if chip == 0:
-                    iasic = cc.img[:, cc.tot_rows:,
-                                   cc.tot_cols:]  # lower right
+                    iasic = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
                 elif chip == 1:
-                    iasic = cc.img[:, :cc.tot_rows,
-                                   cc.tot_cols:]  # upper right
+                    iasic = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
                 elif chip == 2:
                     iasic = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
                 elif chip == 3:
@@ -186,7 +184,8 @@ def main():
                     plt.plot(iasic[:, args.singlepixel[0] + 1,
                                    args.singlepixel[1] - 2], label='+1,-2', alpha=0.75)
 
-                    plt.plot(iasic[:, 176, args.singlepixel[1]], label='176,0', alpha=0.75)
+                    plt.plot(iasic[:, cc.tot_rows-2, args.singlepixel[1]],
+                             label=str(cc.tot_rows-2)+',0', alpha=0.75)
 
                     # plt.legend()
                     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
@@ -206,6 +205,7 @@ def main():
                                              args.singlepixel[1] - 5:args.singlepixel[1] + 6], 0)
                     b_std = np.std(iasic[:, args.singlepixel[0] - 5:args.singlepixel[0] + 6,
                                          args.singlepixel[1] - 5:args.singlepixel[1] + 6], 0)
+
                     im0 = ax[0, 0].imshow(b_avg, cmap=cm.plasma)
                     f.colorbar(im0, ax=ax[0, 0])
                     ax[0, 1].hist(b_avg.ravel(), bins='auto', histtype='step')
