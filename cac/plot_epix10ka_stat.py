@@ -18,9 +18,12 @@ import argparse
 from cac import cac
 import logging
 import matplotlib.cm as cm
+import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from scipy import stats
+from scipy.stats import norm
 import sys
 
 
@@ -45,6 +48,13 @@ def main():
     parser.add_argument("-a", "--asic", nargs=1, metavar=('asic'), type=int, help="asic index.")
     parser.add_argument("-g", "--singlepixel", nargs=2, type=int, metavar=('row', 'col'),
                         help="plot single pixel across multiple frames.")
+    parser.add_argument("-x", "--extractpixel", nargs=4, type=int,
+                        metavar=('row', 'col', 'left', 'right'),
+                        help="extract pixel data across multiple frames.")
+    parser.add_argument("-f", "--fitpixel", nargs=2, type=int,
+                        metavar=('left', 'right'),
+                        help="extract pixel data across multiple frames.")
+
     parser.add_argument("-i", "--inputfile", nargs=1, metavar=('FILE'),
                         help="File name to plot.", required=True)
     args = parser.parse_args()
@@ -138,21 +148,71 @@ def main():
                 img_avg = np.average(iasic, 0)  # mean across multiple frames
                 img_std = np.std(iasic, 0)  # std across multiple frames
 
+                if args.extractpixel:
+                    # px = iasic[1000:2100, args.singlepixel[0], args.singlepixel[1]]
+                    px = iasic[args.extractpixel[2]:args.extractpixel[3],
+                               args.extractpixel[0], args.extractpixel[1]]
+                    logging.debug('saving npz data file...')
+                    np.savez("%s_%d_%d%s" % (filename, args.extractpixel[0], args.extractpixel[1],
+                             '.npz'), px)
+
                 if args.singlepixel:
                     # plot single pixel data [frames,y=row,x=col]
-                    plt.plot(iasic[:, args.singlepixel[0], args.singlepixel[1]])
+                    spdata = iasic[:, args.singlepixel[0], args.singlepixel[1]]
+                    plt.plot(spdata)
                     plt.xlabel('Frame number')
                     plt.ylabel('Amplitude')
-                    # plt.tight_layout()
                     plt.title(cc.filename + "ASIC %d" % (chip) +
                               "\nPixel (%d,%d)" % (args.singlepixel[0],
                                                    args.singlepixel[1]))
+
+                    if args.fitpixel:
+                        px = iasic[args.fitpixel[0]:args.fitpixel[1],
+                                   args.singlepixel[0], args.singlepixel[1]]
+
+                        x = np.linspace(args.fitpixel[0], args.fitpixel[1], px.shape[0])
+                        slope, intercept, r_value, p_value, std_err = stats.linregress(x,
+                                                                                       px.ravel())
+
+                        logging.info('slope %.3f', slope)
+                        logging.info('intercept %.3f', intercept)
+                        logging.info('R2 %.3f', r_value**2)
+                        logging.info('p %.3f', p_value)
+                        logging.info('std_err %.3f', std_err)
+
+                        plt.plot(x, intercept+slope*x, 'r-', linewidth=2)
+
                     if args.exportplot:
-                        plt.savefig(cc.filename + '_r%dc%d.svg' %
+                        plt.savefig(cc.filename + '_r%dc%d.png' %
                                     (args.singlepixel[0], args.singlepixel[1]))
                     else:
                         plt.show()
 
+                    # plot histogram of pixel data without averaged darkframe
+                    # n, bins, patches = plt.hist(spdata-np.average(spdata), bins=32,
+                    #                             histtype='step')
+                    n, bins, patches = plt.hist(spdata-np.average(spdata), bins=64)
+                    plt.title(cc.filename + "ASIC %d" % (chip) +
+                              "\nPixel (%d,%d) Histogram" % (args.singlepixel[0],
+                                                             args.singlepixel[1]))
+                    # Gaussian fit
+                    ax = plt.gca()
+                    (mu, sigma) = norm.fit(spdata.ravel()-np.average(spdata))
+                    plt.text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                             transform=ax.transAxes, horizontalalignment='right',
+                             verticalalignment='top')
+                    normscale = np.sum(n * np.diff(bins))
+                    y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                    plt.plot(bins, y, 'r--')
+                    plt.xlabel('ADC Count')
+                    plt.ylabel('Frequency')
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_r%dc%d_hst.png' %
+                                    (args.singlepixel[0], args.singlepixel[1]))
+                    else:
+                        plt.show()
+
+                # seperate flot for each waveform
                 if args.nplots:
                     plt.imshow(img_avg, cmap=cm.plasma)
                     plt.colorbar()
