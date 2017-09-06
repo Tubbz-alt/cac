@@ -7,7 +7,6 @@ Plots epix10ka statistics.
 Using CAC, plot the average and standard deviation of an image.
 
 :Author: Faisal Abu-Nimeh (abunimeh@slac.stanford.edu)
-:Licesnse: https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html
 :License: https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html
 :Date: 201707
 :Style: OpenStack Style Guidelines https://docs.openstack.org/developer/hacking/
@@ -434,7 +433,8 @@ def main():
 
                         # Heat Map of Stds
                         bstd_mean = np.mean(b_std)
-                        im1 = ax[bank, 2].imshow(b_std, cmap=cm.plasma, vmin=bstd_mean-3, vmax=bstd_mean+3)
+                        im1 = ax[bank, 2].imshow(b_std, cmap=cm.plasma, vmin=bstd_mean-3,
+                                                 vmax=bstd_mean+3)
                         f.colorbar(im1, ax=ax[bank, 2])
 
                         # Histogram of Stds
