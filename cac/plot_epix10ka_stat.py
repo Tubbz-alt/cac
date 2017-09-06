@@ -40,6 +40,7 @@ def main():
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
     parser.add_argument("-r", "--rmrow", nargs=1, metavar=('rmrow'), type=int, help="remove rows.")
+    parser.add_argument("-c", "--rmcol", nargs=1, metavar=('rmrow'), type=int, help="remove cols.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
     parser.add_argument("-a", "--asic", nargs=1, metavar=('asic'), type=int, help="asic index.")
     parser.add_argument("-g", "--singlepixel", nargs=2, type=int, metavar=('row', 'col'),
@@ -125,6 +126,10 @@ def main():
                 # grid rid of rows from bottom
                 if args.rmrow:
                     iasic = iasic[:, :cc.tot_rows-args.rmrow[0], :]
+
+                # grid rid of cols. This will delete pairs
+                if args.rmcol:
+                    iasic = np.delete(iasic, (args.rmcol[0], args.rmcol[0]+1), axis=2)
 
                 # remove all data except baseline
                 if args.baseline:
