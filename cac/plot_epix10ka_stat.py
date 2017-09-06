@@ -217,59 +217,195 @@ def main():
                     plt.imshow(img_avg, cmap=cm.plasma)
                     plt.colorbar()
                     plt.tight_layout()
+                    plt.xlabel('Column')
+                    plt.ylabel('Row')
                     plt.title(cc.filename + '\nASIC %d Image mean' % (chip))
                     if args.exportplot:
-                        plt.savefig(cc.filename + '_%d_avg.svg' % (chip))
+                        plt.savefig(cc.filename + '_%d_avg.png' % (chip))
                     else:
                         plt.show()
                     plt.close()
 
-                    plt.hist(img_avg.ravel(), bins='auto', histtype='step')
-                    plt.title(cc.filename + '\nASIC %d Image mean histogram' % (chip))
-                    plt.tight_layout()
-                    if args.exportplot:
-                        plt.savefig(cc.filename + '_%d_mhst.svg' % (chip))
-                    else:
-                        plt.show()
-                    plt.close()
-
-                    plt.imshow(img_std, cmap=cm.plasma)
+                    iasic_minus = iasic[5, :, :]-img_avg
+                    plt.imshow(iasic_minus, cmap=cm.plasma)
                     plt.colorbar()
                     plt.tight_layout()
-                    plt.title(cc.filename + '\nASIC %d Image std' % (chip))
+                    plt.xlabel('Column')
+                    plt.ylabel('Row')
+                    plt.title(cc.filename + '\nASIC %d Frame without darkframes' % (chip))
                     if args.exportplot:
-                        plt.savefig(cc.filename + '_std.svg')
+                        plt.savefig(cc.filename + '_%d_favg.png' % (chip))
                     else:
                         plt.show()
                     plt.close()
 
-                    plt.hist(img_std.ravel(), bins='auto', histtype='step')
-                    plt.title(cc.filename + '\nASIC %d Image std histogram' % (chip))
-                    plt.tight_layout()
+                    # mean across multiple frames (cols)
+                    img_cols = np.average(iasic[5, :, :]-img_avg, 0)
+                    plt.title(cc.filename + '\nASIC %d Mean Across Columns for single pixel'
+                              % (chip))
+                    plt.plot(img_cols)
+                    plt.xlabel('Columns')
+                    plt.ylabel('ADC count')
                     if args.exportplot:
-                        plt.savefig(cc.filename + '_%d_shst.svg' % (chip))
+                        plt.savefig(cc.filename + '_%d_col_avg_px.png' % (chip))
                     else:
                         plt.show()
                     plt.close()
+
+                    # mean across multiple frames (rows)
+                    img_rows = np.average(iasic[5, :, :]-img_avg, 1)
+                    plt.title(cc.filename + '\nASIC %d Mean Across Rows for single pixel' % (chip))
+                    plt.plot(img_rows)
+                    plt.xlabel('Rows')
+                    plt.ylabel('ADC count')
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_row_avg_px.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
+
+                    # Means Histogram
+                    n, bins, patches = plt.hist(img_avg.ravel(), bins='auto', histtype='step')
+                    plt.title(cc.filename + '\nASIC %d Image mean histogram' % (chip))
+                    plt.xlabel('ADC Count')
+                    plt.ylabel('Frequency')
+                    # Gaussian fit
+                    ax = plt.gca()
+                    (mu, sigma) = norm.fit(img_avg.ravel())
+                    plt.text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                             transform=ax.transAxes, horizontalalignment='right',
+                             verticalalignment='top')
+                    normscale = np.sum(n * np.diff(bins))
+                    y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                    plt.plot(bins, y, 'r--')
+
+                    plt.tight_layout()
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_mhst.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
+                    std_mean = np.mean(img_std)
+                    plt.imshow(img_std, cmap=cm.plasma, vmin=std_mean-3, vmax=std_mean+3)
+                    plt.colorbar()
+                    plt.tight_layout()
+                    plt.xlabel('Column')
+                    plt.ylabel('Row')
+                    plt.title(cc.filename + '\nASIC %d Image std' % (chip))
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_std.png')
+                    else:
+                        plt.show()
+                    plt.close()
+
+                    n, bins, patches = plt.hist(img_std.ravel(), bins='auto', histtype='step')
+                    plt.title(cc.filename + '\nASIC %d Image std histogram' % (chip))
+                    plt.tight_layout()
+                    plt.xlabel('ADC Count')
+                    plt.ylabel('Frequency')
+                    # Gaussian fit
+                    ax = plt.gca()
+                    (mu, sigma) = norm.fit(img_std.ravel())
+                    plt.text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                             transform=ax.transAxes, horizontalalignment='right',
+                             verticalalignment='top')
+                    normscale = np.sum(n * np.diff(bins))
+                    y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                    plt.plot(bins, y, 'r--')
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_shst.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
+
+                    # mean across multiple frames (cols)
+                    img_cols = np.average(img_avg, 0)
+                    plt.title(cc.filename + '\nASIC %d Mean Across Columns' % (chip))
+                    plt.plot(img_cols)
+                    plt.xlabel('Columns')
+                    plt.ylabel('ADC count')
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_col_avg.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
+
+                    # mean across multiple frames (rows)
+                    img_rows = np.average(img_avg, 1)
+                    plt.title(cc.filename + '\nASIC %d Mean Across Rows' % (chip))
+                    plt.plot(img_rows)
+                    plt.xlabel('Rows')
+                    plt.ylabel('ADC count')
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_row_avg.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
+
+                    # Noise distribution of all pixels
+                    iasicall_minus = iasic-img_avg
+                    n, bins, patches = plt.hist(iasicall_minus.ravel(), bins='auto')
+                    plt.title(cc.filename + "ASIC %d Noise Distribution" % (chip))
+                    # Gaussian fit
+                    ax = plt.gca()
+                    (mu, sigma) = norm.fit(iasicall_minus.ravel())
+                    plt.text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                             transform=ax.transAxes, horizontalalignment='right',
+                             verticalalignment='top')
+                    normscale = np.sum(n * np.diff(bins))
+                    y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                    plt.plot(bins, y, 'r--')
+                    plt.xlabel('ADC Count')
+                    plt.ylabel('Frequency')
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_noise_dist_all.png')
+                    else:
+                        plt.show()
 
                 # all in one plot
                 if args.plot:
                     f, ax = plt.subplots(2, 2)
-                    f.suptitle(cc.filename + " ASIC %d" % (chip), fontsize=14)
-                    f.set_size_inches(11, 8.5)
+                    f.suptitle(cc.filename + ", ASIC %d" % (chip)
+                                           + ", # frames: %d" % (iasic.shape[0]), fontsize=14)
+                    f.set_size_inches(14, 14)
                     im0 = ax[0, 0].imshow(img_avg, cmap=cm.plasma)
                     ax[0, 0].set_title('Mean')
+                    ax[0, 0].set_xlabel('Column')
+                    ax[0, 0].set_ylabel('Row')
                     f.colorbar(im0, ax=ax[0, 0])
-                    ax[0, 1].hist(img_avg.ravel(), bins='auto', histtype='step')
+                    n, bins, patches = ax[0, 1].hist(img_avg.ravel(), bins='auto', histtype='step')
                     ax[0, 1].set_title('Mean Histrogram')
-                    im1 = ax[1, 0].imshow(img_std, cmap=cm.plasma)
+                    ax[0, 1].set_xlabel('ADC Count')
+                    ax[0, 1].set_ylabel('Frequency')
+                    # Gaussian fit
+                    (mu, sigma) = norm.fit(img_avg.ravel())
+                    ax[0, 1].text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                                  transform=ax[0, 1].transAxes, horizontalalignment='right',
+                                  verticalalignment='top')
+                    normscale = np.sum(n * np.diff(bins))
+                    y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                    ax[0, 1].plot(bins, y, 'r--')
+                    std_mean = np.mean(img_std)
+                    im1 = ax[1, 0].imshow(img_std, cmap=cm.plasma, vmin=std_mean-3, vmax=std_mean+3)
                     ax[1, 0].set_title('Standard Deviation')
+                    ax[1, 0].set_xlabel('Column')
+                    ax[1, 0].set_ylabel('Row')
                     f.colorbar(im1, ax=ax[1, 0])
-                    ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
-                    ax[1, 1].set_title('Standard Deviation histogram')
+                    n, bins, patches = ax[1, 1].hist(img_std.ravel(), bins='auto', histtype='step')
+                    ax[1, 1].set_title('Standard Deviation Histogram')
+                    ax[1, 1].set_xlabel('ADC Count')
+                    ax[1, 1].set_ylabel('Frequency')
+                    # Gaussian fit
+                    (mu, sigma) = norm.fit(img_std.ravel())
+                    ax[1, 1].text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                                  transform=ax[1, 1].transAxes, horizontalalignment='right',
+                                  verticalalignment='top')
+                    normscale = np.sum(n * np.diff(bins))
+                    y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                    ax[1, 1].plot(bins, y, 'r--')
                     # plt.tight_layout()
                     if args.exportplot:
-                        plt.savefig(cc.filename + '_%d_plt.svg' % (chip))
+                        plt.savefig(cc.filename + '_%d_plt.png' % (chip))
                     else:
                         plt.show()
                     plt.close()
@@ -285,13 +421,33 @@ def main():
                         im0 = ax[bank, 0].imshow(b_avg, cmap=cm.plasma)
                         # ax[bank, 0].set_title('Bank %d Mean' % (bank))
                         f.colorbar(im0, ax=ax[bank, 0])
-                        ax[bank, 1].hist(b_avg.ravel(), bins='auto', histtype='step')
-                        # ax[bank, 1].set_title('Bank %d Mean Histrogram' % (bank))
-                        im1 = ax[bank, 2].imshow(b_std, cmap=cm.plasma)
-                        # ax[bank, 2].set_title('Bank %d Standard Deviation' % (bank))
+                        n, bins, patches = ax[bank, 1].hist(b_avg.ravel(), bins='auto',
+                                                            histtype='step')
+                        # Gaussian fit
+                        (mu, sigma) = norm.fit(b_avg.ravel())
+                        ax[bank, 1].text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                                         transform=ax[bank, 1].transAxes,
+                                         horizontalalignment='right', verticalalignment='top')
+                        normscale = np.sum(n * np.diff(bins))
+                        y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                        ax[bank, 1].plot(bins, y, 'r--')
+
+                        # Heat Map of Stds
+                        bstd_mean = np.mean(b_std)
+                        im1 = ax[bank, 2].imshow(b_std, cmap=cm.plasma, vmin=bstd_mean-3, vmax=bstd_mean+3)
                         f.colorbar(im1, ax=ax[bank, 2])
-                        ax[bank, 3].hist(b_std.ravel(), bins='auto', histtype='step')
-                        # ax[bank, 3].set_title('Bank %d Standard Deviation histogram' % (bank))
+
+                        # Histogram of Stds
+                        n, bins, patches = ax[bank, 3].hist(b_std.ravel(), bins='auto',
+                                                            histtype='step')
+                        # Gaussian fit
+                        (mu, sigma) = norm.fit(b_std.ravel())
+                        ax[bank, 3].text(1., 1., r'$\mu=%.3f,\ \sigma=%.3f$' % (mu, sigma),
+                                         transform=ax[bank, 3].transAxes,
+                                         horizontalalignment='right', verticalalignment='top')
+                        normscale = np.sum(n * np.diff(bins))
+                        y = mlab.normpdf(bins, mu, sigma) * normscale  # scale it to match height
+                        ax[bank, 3].plot(bins, y, 'r--')
 
                     plt.tight_layout()
                     if args.exportplot:
@@ -300,6 +456,27 @@ def main():
                         plt.show()
                     plt.close()
 
+                    f, ax = plt.subplots(4, 2)
+                    f.suptitle(cc.filename + "Flatness: ASIC %d" % (chip), fontsize=14)
+                    f.set_size_inches(22, 17)
+                    for bank in range(cc.tot_banks):
+                        b_avg = np.average(iasic[:, :, bank*cc.cols:(bank+1)*cc.cols-1], 0)
+
+                        img_cols = np.average(b_avg, 0)
+                        ax[bank, 0].plot(img_cols)
+                        ax[bank, 0].set_xlabel('Columns')
+                        ax[bank, 0].set_ylabel('ADC count')
+
+                        img_rows = np.average(b_avg, 1)
+                        ax[bank, 1].plot(img_rows)
+                        ax[bank, 1].set_xlabel('Rows')
+                        ax[bank, 1].set_ylabel('ADC count')
+                    plt.tight_layout()
+                    if args.exportplot:
+                        plt.savefig(cc.filename + '_%d_banks_rowcol.png' % (chip))
+                    else:
+                        plt.show()
+                    plt.close()
             logging.info("Done")
 
 
