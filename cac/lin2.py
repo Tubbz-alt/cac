@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Plots epix10ka linearity statistics.
 
@@ -16,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
+from scipy import stats
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.DEBUG)
 np.set_printoptions(formatter={'int': hex})
@@ -25,8 +25,9 @@ APEAK = True
 
 # row = 65
 # col = 92
-row = 85  # 167 #3
-col = 79  # 44
+row = 10  # 167 #3
+col = 10  # 44
+ADCRESOL = 14  # bits
 
 px = np.array([])
 
@@ -75,11 +76,11 @@ for r in range(px.shape[0]):
     indexes[r] = peak
 
 # plot average across multiple runs
-plt.title('%s\n%s runs Linearity Test Pixel (%d,%d), tr1 00' % (filename, str(px.shape[0]),
-          row, col))
+plt.title('%s\n%s runs Linearity Test Pixel (%d,%d), tr1 00' % (filename, str(px.shape[0]), row,
+                                                                col))
 px_avg = np.average(px, 0)
 px_std = np.std(px, 0)
-plt.errorbar(np.arange(min_px), px_avg, yerr=px_std, fmt='--.',  ecolor='r')
+plt.errorbar(np.arange(min_px), px_avg, yerr=px_std, fmt='--.', ecolor='r')
 plt.plot(px.T, '-')
 plt.show()
 
@@ -87,11 +88,15 @@ plt.show()
 # create axis
 x = np.arange(min_px)
 # rampstart = 150 # tr0
-rampstart = 660  # tr1
-rampstop = max(indexes)-3
+# rampstart = 660  # tr1
+# rampstart = 150
+rampstart = 60
+# rampstop = max(indexes) - 12
+rampstop = 288
 # fitstart = max(indexes)+1
 # fitstart = 870
-fitstart = rampstop+6
+# fitstart = rampstop + 24
+fitstart = 300
 
 # tail after autoranging switch. we are only interested in this range
 rx = x[rampstart:rampstop]
@@ -101,8 +106,16 @@ ry = px[:, rampstart:rampstop]
 rxflat = np.tile(rx, px.shape[0])
 ryflat = ry.ravel()  # flatten y-axis for multiple observations
 
+# coefficients, highest power first
 rcoeff = np.polyfit(rxflat, ryflat, 1)  # first order polyfit or ramp
 rfit1 = np.poly1d(rcoeff)
+
+slope, intercept, r_value, p_value, std_err = stats.linregress(rxflat, ryflat)
+print(slope)
+print(intercept)
+print(r_value**2)
+print(p_value)
+print(std_err)
 
 # tail after autoranging switch. we are only interested in this range
 tx = x[fitstart:]
@@ -114,19 +127,26 @@ tyflat = ty.ravel()  # flatten y-axis for multiple observations
 
 tcoeff = np.polyfit(txflat, tyflat, 1)  # first order polyfit for tail
 tfit1 = np.poly1d(tcoeff)
+slope, intercept, r_value, p_value, std_err = stats.linregress(txflat, tyflat)
+print(slope)
+print(intercept)
+print(r_value**2)
+print(p_value)
+print(std_err)
 
 plt.plot(px.T, 'k.')
 plt.plot(rx, rfit1(rx), '-', linewidth=3)
 plt.plot(tx, tfit1(tx), '-', linewidth=3)
 
+# data transformation
 rtheta = np.arctan(rcoeff[0])
 ttheta = np.arctan(tcoeff[0])
-k = rcoeff[0]/tcoeff[0]
+k = rcoeff[0] / tcoeff[0]
 yoff = rfit1(rampstop)
-tintercept = -1*tcoeff[1]/tcoeff[0]
+tintercept = -1 * tcoeff[1] / tcoeff[0]
 
-newtxflat = (txflat-rampstop) * np.cos(rtheta)/np.cos(ttheta) + rampstop
-newtyflat = (tyflat-tfit1(rampstop)) * np.sin(rtheta)/np.sin(ttheta) + rfit1(rampstop)
+newtxflat = (txflat - rampstop) * np.cos(rtheta) / np.cos(ttheta) + rampstop
+newtyflat = (tyflat - tfit1(rampstop)) * np.sin(rtheta) / np.sin(ttheta) + rfit1(rampstop)
 
 plt.plot(newtxflat, newtyflat, '.', color='#808080')
 
@@ -136,13 +156,26 @@ plt.plot(newtxflat, newtyflat, '.', color='#808080')
 # R = np.matrix([[c, -s], [s, c]])
 
 # replot scaled fit
-tlen = tx.size/np.cos(ttheta)
+tlen = tx.size / np.cos(ttheta)
 newtx_len = np.cos(rtheta) * tlen
 newtx = rampstop + np.arange(newtx_len)
 
 plt.plot(newtx, rfit1(newtx), '-', linewidth=3)
+plt.show()
 
+# INL plots
+ryfit = np.polyval(rcoeff, rxflat)
+tyfit = np.polyval(tcoeff, txflat)
+
+plt.plot(rxflat - min(rxflat), 100 * (ryfit - ryflat) / (max(ryflat) - min(ryflat)), '.')
+plt.title('High Gain INL')
+plt.show()
+
+plt.plot(txflat - min(txflat), 100 * (tyfit - tyflat) / (2**ADCRESOL - min(tyflat)), '.')
+plt.title('Low Gain INL')
 plt.show()
 
 print(rfit1)
 print(tfit1)
+# print the ratio between the slopes
+print("ratio is %f" % (rcoeff[0] / tcoeff[0]))
