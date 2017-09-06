@@ -7,7 +7,7 @@ CAC library.
 Chip Analysis and Characterization library.
 
 :Author: Faisal Abu-Nimeh (abunimeh@slac.stanford.edu)
-:Licesnse: https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html
+:License: https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html
 :Date: 201707
 :Style: OpenStack Style Guidelines https://docs.openstack.org/developer/hacking/
 :vcs_id: $Id$
