@@ -95,9 +95,11 @@ def main():
 
             for chip in range(cc.TOT_CHIPS):
                 # ASIC arrangement
-                #        C0     C1
-                # R0   ASIC2 - ASIC1
-                # R1   ASIC3 - ASIC0
+                #     ___C0_____C1_____
+                #    |                |
+                # R0 |  ASIC2 - ASIC1 |
+                # R1 |  ASIC3 - ASIC0 |
+                #    |________________|
 
                 if args.asic:
                     if args.asic[0] != chip:
