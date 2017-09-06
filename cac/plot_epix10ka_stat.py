@@ -148,7 +148,6 @@ def main():
                 img_std = np.std(iasic, 0)  # std across multiple frames
 
                 if args.extractpixel:
-                    # px = iasic[1000:2100, args.singlepixel[0], args.singlepixel[1]]
                     px = iasic[args.extractpixel[2]:args.extractpixel[3],
                                args.extractpixel[0], args.extractpixel[1]]
                     logging.debug('saving npz data file...')
@@ -188,8 +187,6 @@ def main():
                         plt.show()
 
                     # plot histogram of pixel data without averaged darkframe
-                    # n, bins, patches = plt.hist(spdata-np.average(spdata), bins=32,
-                    #                             histtype='step')
                     n, bins, patches = plt.hist(spdata-np.average(spdata), bins=64)
                     plt.title(cc.filename + "ASIC %d" % (chip) +
                               "\nPixel (%d,%d) Histogram" % (args.singlepixel[0],
