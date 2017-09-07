@@ -56,6 +56,8 @@ def main():
 
     parser.add_argument("-i", "--inputfile", nargs=1, metavar=('FILE'),
                         help="File name to plot.", required=True)
+    parser.add_argument("-j", "--rmnoise", nargs=1, metavar=('rmnoise'),
+                        type=float, help="remove noise.")
     args = parser.parse_args()
 
     # show help if no arguments
@@ -143,6 +145,42 @@ def main():
                 # remove all data except baseline
                 if args.baseline:
                     iasic = iasic[:, cc.tot_rows-2:cc.tot_rows-1, :]
+
+                # filter by Gabriel Blaj
+                if args.rmnoise:
+                    logging.debug('clean up noise...')
+                    noise = args.rmnoise[0]
+                    a = iasic
+                    nframes = iasic.shape[0]
+                    nrows = iasic.shape[1]
+                    ncols = iasic.shape[2]
+
+                    a = a - np.median(a, 0, keepdims=True)
+                    a = a - np.median(a, (1, 2), keepdims=True)
+                    for iframe in range(nframes):
+                        frame = a[iframe]
+                        # trace[np.abs(trace)<noise].mean();
+                        # a[iframe] -= noisemean(frame, noise)
+                        noisemean = frame[np.abs(frame) < noise].mean()
+                        a[iframe] -= noisemean
+
+                    for irow in range(nrows):
+                        for iframe in range(nframes):
+                            trace = a[iframe, irow, :]
+                            noisemean = trace[np.abs(trace) < noise].mean()
+                            a[iframe, irow, :] -= noisemean
+                    for icol in range(ncols):
+                        for iframe in range(nframes):
+                            trace = a[iframe, :, icol]
+                            noisemean = trace[np.abs(trace) < noise].mean()
+                            a[iframe, :, icol] -= noisemean
+                    for irow in range(nrows):
+                        for icol in range(ncols):
+                            trace = a[:, irow, icol]
+                            noisemean = trace[np.abs(trace) < noise].mean()
+                            a[:, irow, icol] -= noisemean
+                    # done
+                    iasic = a
 
                 img_avg = np.average(iasic, 0)  # mean across multiple frames
                 img_std = np.std(iasic, 0)  # std across multiple frames
