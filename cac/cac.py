@@ -39,10 +39,11 @@ class cac(object):
     def __init__(self):
         """CAC Class Constructor."""
         self.pBIN = None  # pixel binary file. will be cleared after 2d transformation
-        self.img = None  # 2d transformed pixel data
+        self.img = None  # 3D transformed pixel data
         self.filename = None  # fielname containing binary data
         self.mdate = 0  # last modified date of fielname
         self.asicname = None  # ASIC name
+        self.asic = None  # 3D transformed pixel data of a single ASIC
 
     def epix10ka(self):
         """ePix10a ASIC definitions."""
@@ -80,25 +81,30 @@ class cac(object):
         self.filename = os.path.basename(filename)
         self.mdate = os.path.getmtime(filename)
 
-    def save(self):
-        """Save 2d pixel content to numpy compressed file.
+    def save(self, asic=None):
+        """Save 3D pixel content to numpy compressed file.
 
         Keyword Arguments:
 
-        Returns: False if 2D data doesn't exist, otherwise True
+        Returns: False if 3D data doesn't exist, otherwise True
 
         """
         if self.img is None:
             return False
 
         logging.debug('saving npz data file...')
-        np.savez(self.filename + '.npz', img=self.img, modified=self.mdate,
-                 basename=self.filename, asicname=self.asicname)
+        if asic is None:
+            np.savez(self.filename + '.npz', img=self.img, modified=self.mdate,
+                     basename=self.filename, asicname=self.asicname)
+        else:
+            self.getasic_epix10ka(asic)
+            np.savez(self.filename + '_' + str(asic) + '.npz', asic=self.asic, modified=self.mdate,
+                     basename=self.filename, asicname=self.asicname)
 
         return True
 
     def loadz(self, filename):
-        """Load 2D pixel data saved in numpy compressed format.
+        """Load 3D pixel data saved in numpy compressed format.
 
         Keyword Arguments:
                 filename: file object
@@ -110,19 +116,22 @@ class cac(object):
         self.filename = binfile2d = str(npzfile['basename'])  # binary data file name
         self.asicname = str(npzfile['asicname'])  # asicname
         self.mdate = npzfile['modified']  # last modified
-        self.img = npzfile['img']  # pixel image
+        if 'img' in npzfile:
+            self.img = npzfile['img']  # pixel image
+            if not os.path.exists(binfile2d):
+                logging.debug("Couldn't find original dat file, will skip freshness check.")
+            else:
+                if npzfile['modified'] != os.path.getmtime(binfile2d):
+                    logging.debug('Data file has been modified since last extraction, redo...')
+                    self.load(binfile2d)
+                    self.img2d()
+                    if not self.save():
+                        logging.error("Couldn't save npz file.")
 
-        if not os.path.exists(binfile2d):
-            logging.debug("Couldn't find original dat file, will skip freshness check.")
-        else:
-            if npzfile['modified'] != os.path.getmtime(binfile2d):
-                logging.debug('binary data file has been modified since last extraction, redo...')
-                self.load(binfile2d)
-                self.img2d()
-                if not self.save():
-                    logging.error("Couldn't save npz file.")
-
-        return self.img
+            return self.img
+        if 'asic' in npzfile:
+            self.asic = npzfile['asic']  # pixel image
+            return self.asic
 
     def check_epix10ka(self, pBIN=None):
         """Analyze binary data for epix10ka.
@@ -332,3 +341,25 @@ class cac(object):
         if '0x' in x:
             base = 16
         return int(x, base)
+
+    def getasic_epix10ka(self, index):
+        """Get single ASIC data and return reference.
+
+        Keyword Arguments:
+                index: ASIC number
+
+        Returns: Numpy Array containing ASIC data
+
+        """
+        if index == 0:
+            self.asic = self.img[:, self.tot_rows:, self.tot_cols:]  # lower right
+        elif index == 1:
+            self.asic = self.img[:, :self.tot_rows, self.tot_cols:]  # upper right
+        elif index == 2:
+            self.asic = self.img[:, :self.tot_rows, :self.tot_cols]  # upper left
+        elif index == 3:
+            self.asic = self.img[:, self.tot_rows:, :self.tot_cols]  # lower left
+        else:
+            return None
+
+        return self.asic
