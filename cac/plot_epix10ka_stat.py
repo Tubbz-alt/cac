@@ -41,8 +41,10 @@ def main():
     parser.add_argument("-l", "--baseline", action="store_true", help="baseline only.")
     parser.add_argument("-e", "--exportplot", action="store_true", help="save plots to svg file.")
     parser.add_argument("-m", "--mask", nargs=1, metavar=('mask'), help="data mask.")
-    parser.add_argument("-r", "--rmrow", nargs=1, metavar=('rmrow'), type=int, help="remove rows.")
-    parser.add_argument("-c", "--rmcol", nargs=1, metavar=('rmrow'), type=int, help="remove cols.")
+    parser.add_argument("-r", "--rmrow", nargs=2, metavar=('srow', 'erow'), type=int,
+                        help="remove rows.")
+    parser.add_argument("-c", "--rmcol", nargs=2, metavar=('scol', 'ecol'), type=int,
+                        help="remove cols.")
     parser.add_argument("-k", "--skip", nargs=1, metavar=('skip'), type=int, help="skip frames.")
     parser.add_argument("-a", "--asic", nargs=1, metavar=('asic'), type=int, help="asic index.")
     parser.add_argument("-g", "--singlepixel", nargs=2, type=int, metavar=('row', 'col'),
@@ -53,11 +55,12 @@ def main():
     parser.add_argument("-f", "--fitpixel", nargs=2, type=int,
                         metavar=('left', 'right'),
                         help="extract pixel data across multiple frames.")
-
     parser.add_argument("-i", "--inputfile", nargs=1, metavar=('FILE'),
                         help="File name to plot.", required=True)
     parser.add_argument("-j", "--rmnoise", nargs=1, metavar=('rmnoise'),
                         type=float, help="remove noise.")
+    parser.add_argument("-q", "--stripcol", nargs=1, metavar=('rmcol'), type=int,
+                        help="strip cols.")
     args = parser.parse_args()
 
     # show help if no arguments
@@ -96,14 +99,13 @@ def main():
                 sys.exit(1)
 
             # check if loading data is OK
-            if cc.img is None:
+            if cc.img is None and cc.asic is None:
                 logging.error("Binary data is missing!")
                 sys.exit(1)
-            logging.debug('image shape ' + str(cc.img.shape))
 
             # save npz data after analysis
             if args.save:
-                cc.save()
+                cc.save(args.asic[0])
 
             for chip in range(cc.TOT_CHIPS):
                 # ASIC arrangement
@@ -118,14 +120,15 @@ def main():
                         # skip other asics
                         continue
 
-                if chip == 0:
-                    iasic = cc.img[:, cc.tot_rows:, cc.tot_cols:]  # lower right
-                elif chip == 1:
-                    iasic = cc.img[:, :cc.tot_rows, cc.tot_cols:]  # upper right
-                elif chip == 2:
-                    iasic = cc.img[:, :cc.tot_rows, :cc.tot_cols]  # upper left
-                elif chip == 3:
-                    iasic = cc.img[:, cc.tot_rows:, :cc.tot_cols]  # lower left
+                # get one ASIC worth of data
+                if cc.asic is None:
+                    iasic = cc.getasic_epix10ka(chip)
+                else:
+                    logging.debug('single asic npz data loaded')
+                    iasic = cc.asic
+
+                logging.debug('image shape ' + str(iasic.shape))
+
                 # get rid of the 15th bit
                 if args.mask:
                     iasic = np.bitwise_and(cc.str2num(args.mask[0]), iasic)
@@ -136,11 +139,15 @@ def main():
 
                 # grid rid of rows from bottom
                 if args.rmrow:
-                    iasic = iasic[:, :cc.tot_rows-args.rmrow[0], :]
+                    iasic = iasic[:, args.rmrow[0]:args.rmrow[1], :]
 
                 # grid rid of cols. This will delete pairs
+                if args.stripcol:
+                    iasic = np.delete(iasic, (args.stripcol[0], args.stripcol[0]+1), axis=2)
+
+                # slice column ranges
                 if args.rmcol:
-                    iasic = np.delete(iasic, (args.rmcol[0], args.rmcol[0]+1), axis=2)
+                    iasic = iasic[:, :, args.rmcol[0]:args.rmcol[1]]
 
                 # remove all data except baseline
                 if args.baseline:
