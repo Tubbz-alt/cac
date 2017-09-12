@@ -38,7 +38,7 @@ class cac(object):
 
     def __init__(self):
         """CAC Class Constructor."""
-        self.pBIN = None  # pixel binary file. will be cleared after 2d transformation
+        self.pBIN = None  # pixel binary file. will be cleared after 3D transformation
         self.img = None  # 3D transformed pixel data
         self.filename = None  # fielname containing binary data
         self.mdate = 0  # last modified date of fielname
@@ -109,7 +109,7 @@ class cac(object):
         Keyword Arguments:
                 filename: file object
 
-        Returns: 2D pixel image
+        Returns: 3D pixel image
 
         """
         npzfile = np.load(filename)
