@@ -9,7 +9,7 @@ Chip Analysis and Characterization
      :alt: Updates
 
 
-Characterize and analyze Integrated Circuits images.
+Characterize and analyze Integrated Circuits images. This package currently supports epix10ka.
 
 
 
@@ -25,4 +25,3 @@ This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypack
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-
