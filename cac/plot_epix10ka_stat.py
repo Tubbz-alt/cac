@@ -94,6 +94,10 @@ def main():
             elif filext == "npz":
                 logging.info("[%s] loading compressed data file", cc.asicname)
                 cc.loadz(filename)
+                if cc.asic is None:
+                    logging.debug('single asic npz data loaded')
+                    cc.TOT_CHIPS = 1  # no need to loop for all
+                    args.asic = None  # ignore multi-asic request
             else:
                 logging.error("[%s] file extension is not recognized!", filext)
                 sys.exit(1)
@@ -105,7 +109,10 @@ def main():
 
             # save npz data after analysis
             if args.save:
-                cc.save(args.asic[0])
+                if args.asic:
+                    cc.save(args.asic[0])
+                else:
+                    cc.save()
 
             for chip in range(cc.TOT_CHIPS):
                 # ASIC arrangement
@@ -121,10 +128,9 @@ def main():
                         continue
 
                 # get one ASIC worth of data
-                if cc.asic is None:
+                if cc.asic is None or chip > 0:
                     iasic = cc.getasic_epix10ka(chip)
                 else:
-                    logging.debug('single asic npz data loaded')
                     iasic = cc.asic
 
                 logging.debug('image shape ' + str(iasic.shape))
