@@ -132,7 +132,9 @@ def main():
                 logging.debug('found [%d %d] ' % (found.start(), found.end()) + p)
                 logging.debug('\t' + line + ' add ' + v + ' becomes')
                 # inject value inline
-                newline = line[:found.start()+len(p) + 3] + "'" + line[found.start()+len(p) + 3:found.end()] + v + "'" + line[found.end():]
+                newline = line[:found.start() + len(p) + 3] + \
+                    "'" + line[found.start() + len(p) + 3:found.end()] + \
+                    v + "'" + line[found.end():]
                 logging.debug('\t' + newline)
                 dstfile_content[i] = newline  # update original var
                 line = newline
