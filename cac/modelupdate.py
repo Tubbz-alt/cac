@@ -65,6 +65,7 @@ def main():
         sys.exit(1)
     logging.debug("[%s] opened for writing", dfile+'.new')
 
+    # read file content and store it as a list
     srcfile_content = srcfile.read().splitlines()
 
     found_model = 0  # flag to force a single loop
@@ -125,15 +126,16 @@ def main():
 
         for p, v in upparams.items():
             # look for parameter followed by a scientific notation number
-            lookfor = r'\b'+p+'[\s=]+([+-]?(?:0|[1-9]\d*)(?:\.\d*)?(?:[eE][+\-]?\d+))'
+            lookfor = r'\b'+p+'\s=\s-?\d[^\s]*'
             found = re.search(lookfor, line, re.IGNORECASE)
             if found:
                 logging.debug('found [%d %d] ' % (found.start(), found.end()) + p)
                 logging.debug('\t' + line + ' add ' + v + ' becomes')
                 # inject value inline
-                newline = line[:found.end()] + v + line[found.end():]
+                newline = line[:found.start()+len(p) + 3] + "'" + line[found.start()+len(p) + 3:found.end()] + v + "'" + line[found.end():]
                 logging.debug('\t' + newline)
                 dstfile_content[i] = newline  # update original var
+                line = newline
 
     # prepare carriage returns and write them to new file.
     newfile.write("\n".join(dstfile_content))
