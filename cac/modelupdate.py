@@ -88,14 +88,17 @@ def main():
                 line = line[1:]  # get rid of +
             line = line.rstrip()  # remove trailing spaces on right
             line = line.lstrip()  # remove spaces on left
-            line = re.sub('\s\s+', '|', line)  # separate params with |
+            line = re.sub('\s?=\s?', '=', line)  # preserve equations
+            line = re.sub('\t', ' ', line)  # replace tabs with spaces
+            line = re.sub('\s\s+', ' ', line)  # multiple spaces with single space
+            logging.debug("[%d] [%s]", i, line)
             # skip empty lines
             if len(line) == 0:
                 continue
             # check if multiple params are on line
-            if '|' in line:
+            if ' ' in line:
                 temp_param = dict((p.strip(), v.strip())
-                                  for p, v in (it.split('=') for it in line.split('|')))
+                                  for p, v in (it.split('=') for it in line.split(' ')))
             else:  # single param
                 single = [it.strip() for it in line.split('=')]
                 temp_param = {single[0]: single[1]}
