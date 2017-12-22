@@ -94,7 +94,7 @@ def main():
             elif filext == "npz":
                 logging.info("[%s] loading compressed data file", cc.asicname)
                 cc.loadz(filename)
-                if cc.asic is None:
+                if cc.asic is not None:
                     logging.debug('single asic npz data loaded')
                     cc.TOT_CHIPS = 1  # no need to loop for all
                     args.asic = None  # ignore multi-asic request
