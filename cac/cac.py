@@ -67,6 +67,28 @@ class cac(object):
         # pixel data in framee 68352 (32-bit words)
         self.PDATA_SZ = int(self.cols / 2 * self.tot_banks * self.TOT_CHIPS * self.tot_rows)
 
+    def epix250s(self):
+        """ePix10a ASIC definitions."""
+        self.asicname = "epix250s"
+        self.tot_banks = 4  # total number of banks in a single asic (chip)
+        self.cols = 96  # number of columns in bank
+        self.tot_cols = self.tot_banks * self.cols  # 384 total columns in chip
+        self.tot_rows = 177*2  # 176 rows + 2 inactive rows
+        self.bitmask = 0x0000FFFF
+        # SuperRows are defined by Data Streamer. i.e. CameraRow i.e. a row of two ASICS
+        self.superrow = (self.tot_cols * self.TOT_CHIPS / 2) / 2  # two columns per word
+        self.header_sz = 10  # number of 32-bit words in header
+        self.envdata_sz = 384*2  # number of words in env data block
+        self.tps_sz = 2  # number of words in env data block
+        self.footer_sz = 1  # number of words in env data block
+        self.frame_sz = self.header_sz - 1 + 2 * self.tot_rows * self.superrow + \
+            self.envdata_sz + self.tps_sz + self.footer_sz  # frame size in bytes
+        self.frame_sz_bytes = int(self.frame_sz*4)  # frame size in bytes
+
+        self.tot_frames = 0  # total number of frames in file
+        # pixel data in framee 68352 (32-bit words)
+        self.PDATA_SZ = int(self.cols / 2 * self.tot_banks * self.TOT_CHIPS * self.tot_rows)
+
     def load(self, filename):
         """Load file content to memory as unsigned 32-bit integer vector.
 
@@ -276,8 +298,12 @@ class cac(object):
             return None
 
         pBIN = self.pBIN
-
         if self.asicname == "epix10a":
+            # check if binary data is OK
+            if not self.check_epix10ka(self.pBIN):
+                return None
+            return self.img2d_epix10ka(self.pBIN)  # 2D transformation
+        if self.asicname == "epix250s":
             # check if binary data is OK
             if not self.check_epix10ka(self.pBIN):
                 return None
