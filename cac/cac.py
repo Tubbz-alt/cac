@@ -273,8 +273,12 @@ class cac(object):
                 skippBIN = self.pBIN[offset + length + 1:]
                 if offset + length + 1 < self.pBIN.size:
                     logging.debug("next frame word: 0x%x", skippBIN[0])
-
-                self.pBIN = np.concatenate((adjpBIN, skippBIN))  # combine to skip offending frame
+                    
+                if (skippBIN.shape[0] / self.frame_sz_bytes)==int(skippBIN.shape[0] / self.frame_sz_bytes):
+                    self.pBIN = np.concatenate((adjpBIN, skippBIN))  # combine to skip offending frame
+                else:
+                    self.pBIN = adjpBIN
+                    logging.error("File is corrupt. Data after skipped frames has wrong size. Removing last part of the dataset.")
 
                 logging.debug("removed offending frame, trying again...")
                 itr += 1
